@@ -14,7 +14,7 @@ def helpMessage() {
       --sampleID user99
     This file should be a tsv with 3 columns: SAMPLEID\t/PATH/TO/BAM/t/PATH/TO/BARCODES
     Each line should only contain information on a single sample.
-    An example can be seen here: https://github.com/cellgeni/nf-souporcell/blob/main/examples/sample.list1
+    An example can be seen here: https://github.com/cellgeni/nf-souporcell/blob/main/examples/example.txt
     The pipeline uses a common variants file by default, to use a known genotypes vcf please use:
     --known_genotypes true
     The default reference fasta used is: GRCh38_v32_modified (2020A)
