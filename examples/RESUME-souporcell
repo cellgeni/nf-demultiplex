@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -euo pipefail
+
+samplefile=/nfs/cellgeni/tickets/tic-2035/actions/example.txt
+config=/nfs/cellgeni/tickets/tic-2035/actions/nextflow.config
+
+[[ -e "$samplefile" ]] || (echo "File "$samplefile" not found" && false)
+
+nextflow run /nfs/cellgeni/tickets/tic-2035/actions/main.nf \
+  --SAMPLEFILE $samplefile \
+  --K 2     \
+  --sangerID "user99" \
+  -c $config \
+  -w souporcell-work \
+  --ansi-log false \
+  -resume
