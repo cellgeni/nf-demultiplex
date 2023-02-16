@@ -170,8 +170,8 @@ process run_shared_samples {
 
   shell:
   '''
-  for s1 in *; do 
-    for s2 in *; do 
+  cut -f 1 !{params.SAMPLEFILE} | while read s1; do 
+    cut -f 1 !{params.SAMPLEFILE} | while read s2; do 
       shared_samples.py -1 $s1 -2 $s2 -n !{params.K} > "map!{params.K}.${s1}-${s2}" 2> "err!{params.K}.${s1}-${s2}"
     done 
   done
