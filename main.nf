@@ -159,13 +159,13 @@ ch_collect
 
 process run_shared_samples {
   
-  publishDir "/lustre/scratch126/cellgen/cellgeni/tickets/nextflow-tower-results/${params.sangerID}/${params.timestamp}/souporcell-results", mode: 'copy'
+  publishDir "/lustre/scratch126/cellgen/cellgeni/tickets/nextflow-tower-results/${params.sangerID}/${params.timestamp}/souporcell-results/shared_samples", mode: 'copy'
 
   input:
   path(name) from ch_run_shared_samples
   
   output:
-  path('shared_samples')
+  path('map*')
   path(name) into ch_email_finish
 
   shell:
@@ -175,9 +175,6 @@ process run_shared_samples {
       shared_samples.py -1 $s1 -2 $s2 -n !{params.K} > "map!{params.K}.${s1}-${s2}" 2> "err!{params.K}.${s1}-${s2}"
     done 
   done
-  mkdir shared_samples
-  mv map2* shared_samples
-  rm err2*
   '''
 }
 
