@@ -55,7 +55,7 @@
         },
         "no_umi": {
           "type": "string",
-          "default": "true",
+          "default": "false",
           "description": "Tells the pipeline whether the BAM files have a UMI tag (default true means BAM file has no UMI tag)"
         }
       }
