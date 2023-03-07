@@ -221,7 +221,8 @@ workflow {
     }
     else {
       email_startup()
-      ch_sample_list | flatMap{ it.readLines() } | get_data | run_souporcell | collect | run_shared_samples | email_finish 
+      ch_sample_list | flatMap{ it.readLines() } | get_data | run_souporcell | collect | run_shared_samples 
+      email_finsih(run_shared_samples.out.output)
     }
   }
 }
