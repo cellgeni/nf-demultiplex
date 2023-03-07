@@ -71,7 +71,7 @@ process email_startup {
 process get_data {
 
   input:
-  val(sample) from ch_get_data
+  val(sample) 
 
   output:
   env(NAME), emit: sampleid 
