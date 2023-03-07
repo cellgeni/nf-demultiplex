@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
 
-nextflow.enable.dsl=1
+nextflow.enable.dsl=2
 
 def helpMessage() {
     log.info"""
@@ -82,10 +82,10 @@ process get_data {
   val(sample) from ch_get_data
 
   output:
-  env(NAME) into ch_run_souporcell_sample
-  path('*barcodes.tsv') into ch_run_souporcell_barcodes
-  path('*bam') into ch_run_souporcell_bam
-  path('*bam.bai') into ch_run_souporcell_index
+  env(NAME), emit: sampleid 
+  path('*barcodes.tsv'), emit: barcode_file 
+  path('*bam'), emit: bam_file 
+  path('*bam.bai'), emit: index_file 
 
   shell:
   '''
@@ -122,13 +122,13 @@ process run_souporcell {
   publishDir "/lustre/scratch126/cellgen/cellgeni/tickets/nextflow-tower-results/${params.sangerID}/${params.timestamp}/souporcell-results", mode: 'copy'
 
   input:
-  val(name) from ch_run_souporcell_sample
-  path(barcodes) from ch_run_souporcell_barcodes
-  path(bam) from ch_run_souporcell_bam
-  path(index) from ch_run_souporcell_index
+  val(name)
+  path(barcodes)
+  path(bam)
+  path(index)
 
   output:
-  path(name) into ch_collect
+  path(name), emit: output 
 
   shell:
   '''
@@ -153,20 +153,16 @@ process run_souporcell {
   '''
 }
 
-ch_collect
-  .collect()
-  .set{ ch_run_shared_samples }
-
 process run_shared_samples {
   
   publishDir "/lustre/scratch126/cellgen/cellgeni/tickets/nextflow-tower-results/${params.sangerID}/${params.timestamp}/souporcell-results/shared_samples", mode: 'copy'
 
   input:
-  path(name) from ch_run_shared_samples
+  path(name) 
   
   output:
   path('map*')
-  path(name) into ch_email_finish
+  path(name), emit: output 
 
   shell:
   '''
@@ -181,7 +177,7 @@ process run_shared_samples {
 process email_finish {
 
   input:
-  path(name) from ch_email_finish
+  path(name) 
 
   shell:
   '''
@@ -219,4 +215,21 @@ process email_finish {
   Cellular Genetics Informatics
   EOF
   '''
+}
+
+workflow {
+  if (params.HELP) {
+    helpMessage()
+    exit 0
+  }
+  else {
+    ch_sample_list = params.SAMPLEFILE != null ? Channel.fromPath(params.SAMPLEFILE) : errorMessage()
+    if (params.sangerID == null) {
+      errorMessage()
+    }
+    else {
+      email_startup()
+      ch_sample_list | flatMap{ it.readLines() } | get_data | run_souporcell | collect | run_shared_samples | email_finish 
+    }
+  }
 }
