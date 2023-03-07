@@ -68,14 +68,6 @@ process email_startup {
   '''
 }
 
-//Puts samplefile into a channel unless it is null, if it is null then it displays error message and exits with status 1.
-ch_sample_list = params.SAMPLEFILE != null ? Channel.fromPath(params.SAMPLEFILE) : errorMessage()
-
-//Each line of the sample file is read and then emitted to its own set of channels, so each sample will be ran in parallel
-ch_sample_list
-  .flatMap{ it.readLines() }
-  .set{ ch_get_data }
-
 process get_data {
 
   input:
