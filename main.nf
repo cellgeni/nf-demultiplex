@@ -154,7 +154,6 @@ process run_shared_samples {
   
   output:
   path('map*')
-  path(name), emit: output 
 
   shell:
   '''
@@ -221,8 +220,7 @@ workflow {
     }
     else {
       email_startup()
-      ch_sample_list | flatMap{ it.readLines() } | get_data | run_souporcell | collect | run_shared_samples 
-      email_finish(run_shared_samples.out.output)
+      ch_sample_list | flatMap{ it.readLines() } | get_data | run_souporcell | collect | run_shared_samples | email_finish
     }
   }
 }
