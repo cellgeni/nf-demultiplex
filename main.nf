@@ -111,7 +111,7 @@ process get_data {
 
 process run_souporcell {
 
-  publishDir "/lustre/scratch126/cellgen/cellgeni/tickets/nextflow-tower-results/${params.sangerID}/${params.timestamp}/souporcell-results", mode: 'copy'
+  publishDir "/lustre/scratch127/cellgen/cellgeni/tickets/nextflow-tower-results/${params.sangerID}/${params.timestamp}/souporcell-results", mode: 'copy'
 
   input:
   val(name)
@@ -147,7 +147,7 @@ process run_souporcell {
 
 process run_shared_samples {
   
-  publishDir "/lustre/scratch126/cellgen/cellgeni/tickets/nextflow-tower-results/${params.sangerID}/${params.timestamp}/souporcell-results/shared_samples", mode: 'copy'
+  publishDir "/lustre/scratch127/cellgen/cellgeni/tickets/nextflow-tower-results/${params.sangerID}/${params.timestamp}/souporcell-results/shared_samples", mode: 'copy'
 
   input:
   path(name) 
@@ -183,10 +183,10 @@ process email_finish {
 
   Hi there, your run of Cellular Genetics Informatic's Souporcell pipeline is complete.
 
-  Results are available here: "/lustre/scratch126/cellgen/cellgeni/tickets/nextflow-tower-results/!{params.sangerID}/!{params.timestamp}/souporcell-results"
+  Results are available here: "/lustre/scratch127/cellgen/cellgeni/tickets/nextflow-tower-results/!{params.sangerID}/!{params.timestamp}/souporcell-results"
 
   The results will be deleted in a week so please copy your data to a sensible location, i.e.:
-  cp -r "/lustre/scratch126/cellgen/cellgeni/tickets/nextflow-tower-results/!{params.sangerID}/!{params.timestamp}/souporcell-results" /path/to/sensible/location
+  cp -r "/lustre/scratch127/cellgen/cellgeni/tickets/nextflow-tower-results/!{params.sangerID}/!{params.timestamp}/souporcell-results" /path/to/sensible/location
 
   The souporcell command run was:
   souporcell_pipeline.py                \
