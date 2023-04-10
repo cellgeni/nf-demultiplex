@@ -115,7 +115,7 @@ process run_souporcell {
   -o "!{name}"                          \
   --skip_remap "!{params.skip_remap}"   \
   --no_umi "!{params.no_umi}"
-  !{baseDir}/bin/soup_qc.sh !{name}
+  !{projectDir}/bin/soup_qc.sh !{name}
   '''
 }
 
