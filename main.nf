@@ -11,7 +11,6 @@ def helpMessage() {
     The parameters you need to input are:
       --SAMPLEFILE /full/path/to/sample/file 
       -K k-value
-      --sampleID user99
     This file should be a tsv with 3 columns: SAMPLEID\t/PATH/TO/BAM/t/PATH/TO/BARCODES
     Each line should only contain information on a single sample.
     An example can be seen here: https://github.com/cellgeni/nf-souporcell/blob/main/examples/example.txt
@@ -41,31 +40,6 @@ def errorMessage() {
     The pipeline has exited with error status 1.
     """.stripIndent()
     exit 1
-}
-
-process email_startup {
-
-  shell:
-  '''
-  contents=`cat !{params.SAMPLEFILE}`
-  sendmail "!{params.sangerID}@sanger.ac.uk" <<EOF
-  Subject: Launched pipeline
-  From: noreply-cellgeni-pipeline@sanger.ac.uk
-
-  Hi there, you've launched Cellular Genetics Informatic's Souporcell pipeline.
-  Your parameters are:
-  Samplefile: !{params.SAMPLEFILE}
-  The K value used is: !{params.K}
-  The reference fasta used is: !{params.reference_fasta}
-  The VCF used is: !{params.vcf}
-
-  Your sample file looks like:
-  $contents
-
-  Thanks,
-  Cellular Genetics Informatics
-  EOF
-  '''
 }
 
 process get_data {
@@ -111,7 +85,7 @@ process get_data {
 
 process run_souporcell {
 
-  publishDir "/lustre/scratch127/cellgen/cellgeni/tickets/nextflow-tower-results/${params.sangerID}/${params.timestamp}/souporcell-results", mode: 'copy'
+  publishDir "${params.outdir}", mode: 'copy'
 
   input:
   val(name)
@@ -147,7 +121,7 @@ process run_souporcell {
 
 process run_shared_samples {
   
-  publishDir "/lustre/scratch127/cellgen/cellgeni/tickets/nextflow-tower-results/${params.sangerID}/${params.timestamp}/souporcell-results/shared_samples", mode: 'copy'
+  publishDir "${params.outdir}/shared_samples", mode: 'copy'
 
   input:
   path(name) 
@@ -165,49 +139,6 @@ process run_shared_samples {
   '''
 }
 
-process email_finish {
-
-  input:
-  path(name) 
-
-  shell:
-  '''
-  common_or_known="--common_variants"
-  if [[ "!{params.known_genotypes}" == "yes" ]]; then
-    common_or_known="--known_genotypes"
-  fi
-  common_or_known="${common_or_known} !{params.vcf}"
-  sendmail "!{params.sangerID}@sanger.ac.uk" <<EOF
-  Subject: Finished pipeline
-  From: noreply-cellgeni-pipeline@sanger.ac.uk
-
-  Hi there, your run of Cellular Genetics Informatic's Souporcell pipeline is complete.
-
-  Results are available here: "/lustre/scratch127/cellgen/cellgeni/tickets/nextflow-tower-results/!{params.sangerID}/!{params.timestamp}/souporcell-results"
-
-  The results will be deleted in a week so please copy your data to a sensible location, i.e.:
-  cp -r "/lustre/scratch127/cellgen/cellgeni/tickets/nextflow-tower-results/!{params.sangerID}/!{params.timestamp}/souporcell-results" /path/to/sensible/location
-
-  The souporcell command run was:
-  souporcell_pipeline.py                \
-  -i "sample-bam"                           \
-  -b "sample-barcodes"                      \
-  -f "!{params.reference_fasta}"        \
-  -k "!{params.K}"                      \
-  $common_or_known                      \
-  -t 8                                  \
-  -o "sampleID"                          \
-  --skip_remap "!{params.skip_remap}"   \
-  --no_umi "!{params.no_umi}"
-
-  Each sample has the command run documented inside: "sampleID/cmd.txt"
-
-  Thanks,
-  Cellular Genetics Informatics
-  EOF
-  '''
-}
-
 workflow {
   if (params.HELP) {
     helpMessage()
@@ -215,12 +146,6 @@ workflow {
   }
   else {
     ch_sample_list = params.SAMPLEFILE != null ? Channel.fromPath(params.SAMPLEFILE) : errorMessage()
-    if (params.sangerID == null) {
-      errorMessage()
-    }
-    else {
-      email_startup()
-      ch_sample_list | flatMap{ it.readLines() } | get_data | run_souporcell | collect | run_shared_samples | email_finish
-    }
+    ch_sample_list | flatMap{ it.readLines() } | get_data | run_souporcell | collect | run_shared_samples
   }
 }
