@@ -16,7 +16,7 @@ There are two branches:
 * `Dockerfile` - a dockerfile to reproduce the environment used to run the pipeline.
 
 ## Pipeline Arguments:
-* `--SAMPLEFILE` - The path to the sample file provided to the pipeline. This is a tab-separated file with one sample per line. Each line should contain a sample id, path to bam file, path to barcodes file (in that order!)."
+* `--SAMPLEFILE` - The path to the sample file provided to the pipeline. This is a tab-separated file with one sample per line. Each line should contain a sample id, path to bam file, path to barcodes file (in that order!).
 * `--outdir` - The path to where the results will be saved.
 * `--K` - The number of donors in the samples. All samples must contain the same number of donors.
 * `--known_genotypes` - "Whether to use the known_genotypes option. The requires a VCF with the known genotypes in it. The number of genotypes must match the number of donors supplied in the K parameter (Defualt "no" means not to use known_genotypes).
