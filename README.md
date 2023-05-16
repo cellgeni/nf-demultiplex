@@ -1,5 +1,5 @@
 # nf-souporcell
-Our Souporcell repo but for Nextflow Tower
+Our [SouporCell repo](https://github.com/cellgeni/souporcell) but for Nextflow Tower
 
 There are two branches:
 
