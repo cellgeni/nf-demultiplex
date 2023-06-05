@@ -19,10 +19,10 @@ There are two branches:
 * `--SAMPLEFILE` - The path to the sample file provided to the pipeline. This is a tab-separated file with one sample per line. Each line should contain a sample id, path to bam file, path to barcodes file (in that order!).
 * `--outdir` - The path to where the results will be saved.
 * `--K` - The number of donors in the samples. All samples must contain the same number of donors.
-* `--known_genotypes` - "Whether to use the known_genotypes option. The requires a VCF with the known genotypes in it. The number of genotypes must match the number of donors supplied in the K parameter (Defualt "no" means not to use known_genotypes).
+* `--vcf` - Path to vcf file used for souporcell (default is 2p 1k genome with chr nomenclature).
+* `--known_genotypes` - Whether to use the `known_genotypes` option. This expects an input of either "yes" or "no". If "yes" is used then the `--vcf` option needs to be provided with a path to the known genotypes VCF file. The number of genotypes in the known genotypes vcf must match the number of donors supplied in the K parameter (Defualt "no" means not to use known_genotypes).
 * `--barcodes_on_irods` - Tells pipeline whether to look for the gzipped barcodes file on IRODS or the FARM (default yes means look on IRODS).
 * `--bam_on_irods` - Tells pipeline whether to look for the bam file on IRODS or the FARM (default yes means look on IRODS).
 * `--reference_fasta` - Path to  genome fasta for pipeline to use (by default GRCh38 2020A is used). This argument is hardcoded and needs to be changed to your local path to the fasta file. 
-* `--vcf` - Path to vcf file used for souporcell (default is 2p 1k genome with chr nomenclature). This argument is hardcoded and needs to be changed to your local path to the vcf file.
 * `--skip_remap` - Whether to skip remapping in souporcell pipeline (default true means skip remapping).
 * `--no_umi` - Tells the pipeline whether the BAM files have a UMI tag (default false means BAM file has UMI tag).
