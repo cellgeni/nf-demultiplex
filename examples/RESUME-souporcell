@@ -3,14 +3,11 @@
 set -euo pipefail
 
 samplefile=actions/samples.txt
-config=actions/nextflow.config
 
 [[ -e "$samplefile" ]] || (echo "File "$samplefile" not found" && false)
 
 nextflow run cellgeni/nf-souporcell \
   --SAMPLEFILE $samplefile \
   --K number-of-donors     \
-  -c $config \
-  -w souporcell-work \
   --ansi-log false \
   -resume
