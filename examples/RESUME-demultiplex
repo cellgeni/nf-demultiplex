@@ -2,12 +2,13 @@
 
 set -euo pipefail
 
-samplefile=actions/samples.txt
+samplefile=/path/to/sample/file
 
 [[ -e "$samplefile" ]] || (echo "File "$samplefile" not found" && false)
 
-nextflow run cellgeni/nf-souporcell \
+nextflow run main.nf \
+  -entry all \
   --SAMPLEFILE $samplefile \
-  --K number-of-donors     \
+  --K 2     \
   --ansi-log false \
   -resume
