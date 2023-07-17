@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-samplefile=irods.txt
+samplefile=/path/to/sample/file
 
 [[ -e "$samplefile" ]] || (echo "File "$samplefile" not found" && false)
 
