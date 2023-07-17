@@ -13,7 +13,8 @@ There are two branches:
 * `examples/samples.txt` - samplefile tsv containing 3 fields: sampleID, path to BAM file, path to barcodes tsv.gz file (The order of these files is important!). These paths can be IRODs paths or local paths.
 * `examples/RESUME-demultiplex` - an example run script that executes the pipeline it has 1 hardcoded argument: `/path/to/sample/file` that needs to be changed based on your local set up.
 * `bin/soup_qc.sh` - a quick qc script that enables quick sanity checks that souporcell worked correctly.
-* `Dockerfile` - a dockerfile to reproduce the environment used to run the pipeline.
+* `dockerfiles/Dockerfile-souporcell` - a dockerfile to reproduce the environment used to run souporcell in the pipeline.
+* `dockerfiles/Dockerfile-vireo` - a dockerfile to reproduce the environment used to run vireo in the pipeline.
 
 ## Pipeline Arguments:
 * `-entry` - The entrypoint to specify which determines whether souporcell or vireo or both tools are used.
