@@ -8,7 +8,7 @@ sample=$1
 ambient=$(cat $sample/ambient_rna.txt | cut -d " " -f 5 | cut -c 1-4)
 echo "${ambient}% ambient RNA" > "${sample}/qc.txt"
 ##Get number of doublets in sample
-doublet=$(grep "removing .* as doublet" $sample/doublets.err | wc -l)
+doublet=$(grep "removing .* as doublet" $sample/doublets.err || true | wc -l)
 echo "${doublet} doublets removed" >> "${sample}/qc.txt"
 ##Get number of cells, doublets, singlets and unassigned for each cluster in sample
 clusters=($(tail -n +2 $sample/clusters.tsv | cut -f 3 | sort | uniq))
