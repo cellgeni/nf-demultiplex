@@ -132,23 +132,7 @@ process run_souporcell {
 
   shell:
   '''
-  common_or_known="--common_variants"
-  if [[ "!{params.known_genotypes}" == "yes" ]]; then
-    common_or_known="--known_genotypes"
-  fi
-  common_or_known="${common_or_known} !{params.soc_vcf}"
-  mkdir "!{name}"
-  echo "souporcell_pipeline.py -i !{bam} -b !{barcodes} -f !{params.soc_fasta} -k !{params.K} ${common_or_known} -t 8 -o !{name} --skip_remap !{params.skip_remap} --no_umi !{params.no_umi}" > !{name}/cmd.txt
-  souporcell_pipeline.py                \
-  -i "!{bam}"                           \
-  -b "!{barcodes}"                      \
-  -f "!{params.soc_fasta}"              \
-  -k "!{params.K}"                      \
-  $common_or_known                      \
-  -t 8                                  \
-  -o "!{name}"                          \
-  --skip_remap "!{params.skip_remap}"   \
-  --no_umi "!{params.no_umi}"
+  !{projectDir}/bin/souporcell.sh !{name} !{barcodes} !{bam} !{params.known_genotypes} !{params.soc_vcf} !{params.soc_fasta} !{params.K} !{params.skip_remap} !{params.no_umi}
   !{projectDir}/bin/soup_qc.sh !{name}
   '''
 }
