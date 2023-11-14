@@ -1,4 +1,4 @@
-FROM python:3.7
+FROM python:3.10
 
 # use bash shell
 SHELL ["/bin/bash", "-c"]
@@ -7,25 +7,27 @@ SHELL ["/bin/bash", "-c"]
 # make apt-get have zero interaction while installing or upgrading
 ENV DEBIAN_FRONTEND=noninteractive
 
+# trying to match versions of tools and packages to official image
+
 # OS dependencies
 RUN apt-get update -y && \
-    apt-get install -y \
-      wget git build-essential \
+    apt-get install -y wget build-essential \
       libncurses5-dev zlib1g-dev \
       libbz2-dev liblzma-dev procps
 
 # minimap2
-ARG MINIMAP2="2.7"
-RUN wget -q -O minimap2.tar.gz https://github.com/lh3/minimap2/archive/v${MINIMAP2}.tar.gz && \
+ARG MINIMAP2="2.26"
+RUN wget -q -O minimap2.tar.bz2 https://github.com/lh3/minimap2/releases/download/v${MINIMAP2}/minimap2-${MINIMAP2}_x64-linux.tar.bz2 && \
     mkdir -p /opt/minimap2 && \
-    tar xzvf minimap2.tar.gz -C /opt/minimap2 --strip-components 1
-ENV PATH="/opt/minimap2/bin:$PATH"
-      
+    tar xjvf minimap2.tar.bz2 -C /opt/minimap2 --strip-components 1
+ENV PATH="/opt/minimap2:$PATH"
+
 # bedtools  
 ARG BEDTOOLS2="2.28.0"
 RUN wget -q -O bedtools2.tar.gz https://github.com/arq5x/bedtools2/releases/download/v${BEDTOOLS2}/bedtools-${BEDTOOLS2}.tar.gz && \
     mkdir -p /opt/bedtools2 && \
-    tar zxvf bedtools2.tar.gz  -C /opt/bedtools2 --strip-components 1
+    tar zxvf bedtools2.tar.gz  -C /opt/bedtools2 --strip-components 1 && \
+    cd /opt/bedtools2 && make
 ENV PATH="/opt/bedtools2/bin:$PATH"
 
 # Rust
@@ -37,20 +39,23 @@ RUN wget -qO- https://sh.rustup.rs | bash -s -- -y && \
 ENV PATH="/opt/rust/.cargo/bin:$PATH"
 
 # souporcell
-RUN git clone --depth 1 https://github.com/wheaton5/souporcell.git /opt/souporcell && \
+ARG SOUPORCELL="2.5"
+RUN wget -q -O "souporcell.tar.gz" "https://github.com/wheaton5/souporcell/archive/refs/tags/v${SOUPORCELL}.tar.gz" && \
+    mkdir -p /opt/souporcell && \
+    tar zxvf souporcell.tar.gz  -C /opt/souporcell --strip-components 1 && \
     cd /opt/souporcell/troublet && \
     cargo build --release && \
     cd /opt/souporcell/souporcell && \
     cargo build --release
 ENV PATH="/opt/souporcell:/opt/souporcell/troublet/target/release:$PATH"
 
-# python dependencies
+# python dependencies (trying to use exactly the same as the ones in the official image)
 RUN pip install --upgrade pip && \
-    # to prevent 'error in PyVCF setup command: use_2to3 is invalid' 
-    pip install "setuptools<58.0.0" && \
-    pip install --no-cache-dir \
-      pysam pyvcf "numpy<1.23.0" scipy "Cython>=0.22" pyfaidx && \
-    pip install "pystan==2.17.1.0"
+    # to prevent 'error in PyVCF setup command: use_2to3 is invalid' need <58.0.0 
+    pip install --no-cache-dir "setuptools==57.5.0" && \
+    pip install --no-cache-dir Cython && \
+    pip install --no-cache-dir pysam pyvcf "numpy==1.24.3" scipy pyfaidx && \
+    pip install --no-cache-dir "pystan==2.19.1.1"
 
 # HTSlib/samtools/bcftools
 ARG SAMTOOLS="1.9"
@@ -68,12 +73,13 @@ RUN wget -q -O bcftools.tar.bz2 https://github.com/samtools/bcftools/releases/do
     cd /opt/bcftools && ./configure && make && make install
 
 # freebayes
-ARG FREEBAYES="1.3.1"
-RUN wget -q -O /opt/freebayes https://github.com/ekg/freebayes/releases/download/v${FREEBAYES}/freebayes-v${FREEBAYES} && \
+ARG FREEBAYES="1.3.6"
+# This package doesnt keep consistent naming so when updating may need to change
+RUN wget -q -O /opt/freebayes https://github.com/freebayes/freebayes/releases/download/v${FREEBAYES}/freebayes-${FREEBAYES}-linux-amd64-static.gz && \
     chmod +x /opt/freebayes
 
 # Vartrix
-ARG VARTRIX="1.1.16"
+ARG VARTRIX="1.1.22"
 RUN wget -q -O /opt/vartrix https://github.com/10XGenomics/vartrix/releases/download/v${VARTRIX}/vartrix_linux && \
     chmod +x /opt/vartrix
 ENV PATH="/opt:$PATH"
