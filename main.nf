@@ -113,8 +113,7 @@ process run_vireo {
 
   shell:
   '''
-  vireo -c !{cellsnp} -N !{params.K} -o "!{name}-vireo"
-  echo "vireo -c !{cellsnp} -N !{params.K} -o !{name}-vireo" > "!{name}-vireo/cmd.txt"
+  !{projectDir}/bin/vireo.sh !{name} !{cellsnp} !{params.K}
   '''
 }
 
