@@ -193,6 +193,7 @@ workflow all {
     run_souporcell(ch_data)
     ch_soc = run_souporcell.out.output | collect
     run_shared_samples(ch_soc, ch_sample_list)
-    quantify_sahred_samples()
+    run_shared_samples.out.mapping.view()
+    //quantify_shared_samples(run_shared_samples.out.mapping)
   }
 }
