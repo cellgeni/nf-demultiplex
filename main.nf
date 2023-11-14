@@ -9,9 +9,9 @@ def helpMessage() {
     The parameters you need to input are:
       --SAMPLEFILE /full/path/to/sample/file 
       -K k-value
-    This file should be a tsv with 3 columns: SAMPLEID\t/PATH/TO/BAM/t/PATH/TO/BARCODES
+    This file should be a tsv with 3 columns: SAMPLEID\t/PATH/TO/BAM/\t/PATH/TO/BARCODES
     Each line should only contain information on a single sample.
-    An example can be seen here: https://github.com/cellgeni/nf-souporcell/blob/main/examples/example.txt
+    An example can be seen here: https://github.com/cellgeni/nf-demultiplex/blob/main/examples/samples.txt
     ----------
     souporcell
     ----------
@@ -27,7 +27,7 @@ def helpMessage() {
     -----
     The default reference vcf is: genome1K.phase3.SNP_AF5e2.chr1toX.hg38
     To change this default input:
-      --vireo_vcf /path/to/vcf
+      --snp_vcf /path/to/vcf
     """.stripIndent()
 }
 
@@ -94,8 +94,7 @@ process run_cellsnp {
 
   shell:
   '''
-  cellsnp-lite -s !{bam} -b !{barcodes} -O "!{name}-cellsnp" -R !{params.vireo_vcf} --gzip
-  echo "cellsnp-lite -s !{bam} -b !{barcodes} -O !{name}-cellsnp -R !{params.vireo_vcf} --gzip" > "!{name}-cellsnp/cmd.txt"
+  !{projectDir}/bin/cellsnp.sh !{name} !{barcodes} !{bam} !{params.snp_vcf} 
   '''
 }
 
