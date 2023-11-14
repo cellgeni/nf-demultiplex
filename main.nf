@@ -94,7 +94,7 @@ process run_cellsnp {
 
   shell:
   '''
-  !{projectDir}/bin/cellsnp.sh !{name} !{barcodes} !{bam} !{params.snp_vcf} 
+  !{projectDir}/bin/cellsnp.sh !{name} !{barcodes} !{bam} !{params.snp_vcf}
   '''
 }
 
@@ -128,7 +128,7 @@ process run_souporcell {
   path(index)
 
   output:
-  path(name), emit: output 
+  path(name), emit: output
 
   shell:
   '''
@@ -146,15 +146,11 @@ process run_shared_samples {
   path(samplefile)
   
   output:
-  path('map*')
+  path('map*'), emit: mapping
 
   shell:
   '''
-  cut -f 1 "!{samplefile}" | while read s1; do 
-    cut -f 1 "!{samplefile}" | while read s2; do 
-      shared_samples.py -1 $s1 -2 $s2 -n !{params.K} 1> "map!{params.K}.${s1}-${s2}" 2> "err!{params.K}.${s1}-${s2}"
-    done 
-  done
+  !{projectDir}/bin/shared_samples.sh !{samplefile} !{params.K}
   '''
 }
 
@@ -197,5 +193,6 @@ workflow all {
     run_souporcell(ch_data)
     ch_soc = run_souporcell.out.output | collect
     run_shared_samples(ch_soc, ch_sample_list)
+    quantify_sahred_samples()
   }
 }
