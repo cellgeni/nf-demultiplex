@@ -59,26 +59,19 @@ process get_data {
 
   shell:
   '''
-  
-  if [[ "!{params.bam_on_irods}" == "no" ]]; then
-    cp "!{bam_path}" "!{id}.bam"
-    cp "!{bam_path}.bai" "!{id}.bam.bai"
-  elif [[ "!{params.bam_on_irods}" == "yes" ]]; then
+  if "!{params.bam_on_irods}"; then
     iget -f -v -K "!{bam_path}" "!{id}.bam"
     iget -f -v -K "!{bam_path}.bai" "!{id}.bam.bai"
   else
-    echo "incorrect bam option"
-    exit 1
+    cp "!{bam_path}" "!{id}.bam"
+    cp "!{bam_path}.bai" "!{id}.bam.bai"
   fi
-  if [[ "!{params.barcodes_on_irods}" == "no" ]]; then
-    cp "!{barcodes_path}" "!{id}.barcodes.tsv.gz"
-    gunzip -f "!{id}.barcodes.tsv.gz"
-  elif [[ "!{params.barcodes_on_irods}" == "yes" ]]; then
+  if "!{params.barcodes_on_irods}"; then
     iget -f -v -K "!{barcodes_path}" "!{id}.barcodes.tsv.gz"
     gunzip -f "!{id}.barcodes.tsv.gz"
   else
-    echo "incorrect barcodes option"
-    exit 1
+    cp "!{barcodes_path}" "!{id}.barcodes.tsv.gz"
+    gunzip -f "!{id}.barcodes.tsv.gz"
   fi
   '''
 }
