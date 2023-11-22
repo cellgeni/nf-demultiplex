@@ -7,8 +7,7 @@ samplefile=/path/to/sample/file
 [[ -e "$samplefile" ]] || (echo "File "$samplefile" not found" && false)
 
 nextflow run main.nf \
-  -entry all \
   --SAMPLEFILE $samplefile \
-  --K 2     \
+  --K donor-value     \
   --ansi-log false \
   -resume
