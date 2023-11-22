@@ -154,6 +154,36 @@ process run_shared_samples {
   '''
 }
 
+process quantify_shared_samples {
+
+  publishDir "${params.outdir}/souporcell/shared_samples", mode: 'copy'
+
+  input:
+  path(mapping)
+
+  output:
+  path('quantification')
+
+  shell:
+  '''
+  mkdir -p quantification/clusters
+  for shared in map*; do
+    #Get sample id from shared sample file name
+    sample=`echo $shared | cut -f 2 -d .`
+    #Extract cluster comparison tsv from shared samples file
+    tail -n +6 $shared > "quantification/clusters/${sample}.cluster"
+  done
+  cd quantification
+  mkdir -p loss-tables
+  for comparison in clusters/*.cluster; do
+    sample=`echo $comparison | cut -f 2 -d / | cut -f 1 -d .`
+    python !{projectDir}/bin/shared-samples-quant.py --input $comparison --sample $sample
+  done
+  echo -e "experiment1_cluster\texperiment2_cluster\tloss\tsample_id" > total.tsv
+  cat loss-tables/* >> total.tsv
+  '''
+}
+
 workflow vireo {
   if (params.HELP) {
     helpMessage()
@@ -193,7 +223,6 @@ workflow all {
     run_souporcell(ch_data)
     ch_soc = run_souporcell.out.output | collect
     run_shared_samples(ch_soc, ch_sample_list)
-    run_shared_samples.out.mapping.view()
-    //quantify_shared_samples(run_shared_samples.out.mapping)
+    quantify_shared_samples(run_shared_samples.out.mapping)
   }
 }
