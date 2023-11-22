@@ -210,7 +210,7 @@ workflow souporcell {
   }
 }
 
-workflow {
+workflow all {
   if (params.HELP) {
     helpMessage()
     exit 0
