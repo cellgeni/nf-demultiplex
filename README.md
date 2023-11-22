@@ -23,7 +23,7 @@ There are two branches:
 * `dockerfiles/Dockerfile-shared-samples-quantification` - a dockerfile to reproduce the environment used to run shared samples quantificaiton.
 
 ## Pipeline Arguments:
-* `-entry` - The entrypoint to specify which determines whether souporcell or vireo or both tools are used.
+* `-entry` - The entrypoint to specify which determines whether souporcell or vireo is used (default is to use both).
 * `--SAMPLEFILE` - The path to the sample file provided to the pipeline. This is a tab-separated file with one sample per line. Each line should contain a sample id, path to bam file, path to barcodes file (in that order!).
 * `--outdir` - The path to where the results will be saved.
 * `--K` - The number of donors in the samples. All samples must contain the same number of donors.
