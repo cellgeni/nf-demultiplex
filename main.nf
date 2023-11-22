@@ -9,9 +9,9 @@ def helpMessage() {
     The parameters you need to input are:
       --SAMPLEFILE /full/path/to/sample/file 
       -K k-value
-    This file should be a tsv with 3 columns: SAMPLEID\t/PATH/TO/BAM/t/PATH/TO/BARCODES
+    This file should be a tsv with 3 columns: SAMPLEID\t/PATH/TO/BAM/\t/PATH/TO/BARCODES
     Each line should only contain information on a single sample.
-    An example can be seen here: https://github.com/cellgeni/nf-souporcell/blob/main/examples/example.txt
+    An example can be seen here: https://github.com/cellgeni/nf-demultiplex/blob/main/examples/samples.txt
     ----------
     souporcell
     ----------
@@ -27,7 +27,7 @@ def helpMessage() {
     -----
     The default reference vcf is: genome1K.phase3.SNP_AF5e2.chr1toX.hg38
     To change this default input:
-      --vireo_vcf /path/to/vcf
+      --snp_vcf /path/to/vcf
     """.stripIndent()
 }
 
@@ -59,26 +59,19 @@ process get_data {
 
   shell:
   '''
-  
-  if [[ "!{params.bam_on_irods}" == "no" ]]; then
-    cp "!{bam_path}" "!{id}.bam"
-    cp "!{bam_path}.bai" "!{id}.bam.bai"
-  elif [[ "!{params.bam_on_irods}" == "yes" ]]; then
+  if "!{params.bam_on_irods}"; then
     iget -f -v -K "!{bam_path}" "!{id}.bam"
     iget -f -v -K "!{bam_path}.bai" "!{id}.bam.bai"
   else
-    echo "incorrect bam option"
-    exit 1
+    cp "!{bam_path}" "!{id}.bam"
+    cp "!{bam_path}.bai" "!{id}.bam.bai"
   fi
-  if [[ "!{params.barcodes_on_irods}" == "no" ]]; then
-    cp "!{barcodes_path}" "!{id}.barcodes.tsv.gz"
-    gunzip -f "!{id}.barcodes.tsv.gz"
-  elif [[ "!{params.barcodes_on_irods}" == "yes" ]]; then
+  if "!{params.barcodes_on_irods}"; then
     iget -f -v -K "!{barcodes_path}" "!{id}.barcodes.tsv.gz"
     gunzip -f "!{id}.barcodes.tsv.gz"
   else
-    echo "incorrect barcodes option"
-    exit 1
+    cp "!{barcodes_path}" "!{id}.barcodes.tsv.gz"
+    gunzip -f "!{id}.barcodes.tsv.gz"
   fi
   '''
 }
@@ -101,8 +94,7 @@ process run_cellsnp {
 
   shell:
   '''
-  cellsnp-lite -s !{bam} -b !{barcodes} -O "!{name}-cellsnp" -R !{params.vireo_vcf} --gzip
-  echo "cellsnp-lite -s !{bam} -b !{barcodes} -O !{name}-cellsnp -R !{params.vireo_vcf} --gzip" > "!{name}-cellsnp/cmd.txt"
+  !{projectDir}/bin/cellsnp.sh !{name} !{barcodes} !{bam} !{params.snp_vcf}
   '''
 }
 
@@ -121,8 +113,7 @@ process run_vireo {
 
   shell:
   '''
-  vireo -c !{cellsnp} -N !{params.K} -o "!{name}-vireo"
-  echo "vireo -c !{cellsnp} -N !{params.K} -o !{name}-vireo" > "!{name}-vireo/cmd.txt"
+  !{projectDir}/bin/vireo.sh !{name} !{cellsnp} !{params.K}
   '''
 }
 
@@ -137,27 +128,11 @@ process run_souporcell {
   path(index)
 
   output:
-  path(name), emit: output 
+  path(name), emit: output
 
   shell:
   '''
-  common_or_known="--common_variants"
-  if [[ "!{params.known_genotypes}" == "yes" ]]; then
-    common_or_known="--known_genotypes"
-  fi
-  common_or_known="${common_or_known} !{params.soc_vcf}"
-  mkdir "!{name}"
-  echo "souporcell_pipeline.py -i !{bam} -b !{barcodes} -f !{params.soc_fasta} -k !{params.K} ${common_or_known} -t 8 -o !{name} --skip_remap !{params.skip_remap} --no_umi !{params.no_umi}" > !{name}/cmd.txt
-  souporcell_pipeline.py                \
-  -i "!{bam}"                           \
-  -b "!{barcodes}"                      \
-  -f "!{params.soc_fasta}"              \
-  -k "!{params.K}"                      \
-  $common_or_known                      \
-  -t 8                                  \
-  -o "!{name}"                          \
-  --skip_remap "!{params.skip_remap}"   \
-  --no_umi "!{params.no_umi}"
+  !{projectDir}/bin/souporcell.sh !{name} !{barcodes} !{bam} !{params.known_genotypes} !{params.soc_vcf} !{params.soc_fasta} !{params.K} !{params.skip_remap} !{params.no_umi}
   !{projectDir}/bin/soup_qc.sh !{name}
   '''
 }
@@ -171,15 +146,41 @@ process run_shared_samples {
   path(samplefile)
   
   output:
-  path('map*')
+  path('map*'), emit: mapping
 
   shell:
   '''
-  cut -f 1 "!{samplefile}" | while read s1; do 
-    cut -f 1 "!{samplefile}" | while read s2; do 
-      shared_samples.py -1 $s1 -2 $s2 -n !{params.K} 1> "map!{params.K}.${s1}-${s2}" 2> "err!{params.K}.${s1}-${s2}"
-    done 
+  !{projectDir}/bin/shared_samples.sh !{samplefile} !{params.K}
+  '''
+}
+
+process quantify_shared_samples {
+
+  publishDir "${params.outdir}/souporcell/shared_samples", mode: 'copy'
+
+  input:
+  path(mapping)
+
+  output:
+  path('quantification')
+
+  shell:
+  '''
+  mkdir -p quantification/clusters
+  for shared in map*; do
+    #Get sample id from shared sample file name
+    sample=`echo $shared | cut -f 2 -d .`
+    #Extract cluster comparison tsv from shared samples file
+    tail -n +6 $shared > "quantification/clusters/${sample}.cluster"
   done
+  cd quantification
+  mkdir -p loss-tables
+  for comparison in clusters/*.cluster; do
+    sample=`echo $comparison | cut -f 2 -d / | cut -f 1 -d .`
+    python !{projectDir}/bin/shared-samples-quant.py --input $comparison --sample $sample
+  done
+  echo -e "experiment1_cluster\texperiment2_cluster\tloss\tsample_id" > total.tsv
+  cat loss-tables/* >> total.tsv
   '''
 }
 
@@ -222,5 +223,6 @@ workflow all {
     run_souporcell(ch_data)
     ch_soc = run_souporcell.out.output | collect
     run_shared_samples(ch_soc, ch_sample_list)
+    quantify_shared_samples(run_shared_samples.out.mapping)
   }
 }

@@ -12,9 +12,15 @@ There are two branches:
 * `nextflow.config` - the configuration script that allows the processes to be submitted to IBM LSF on Sanger's HPC and ensures correct environment is set via singularity container (this is an absolute path). Global default parameters are also set in this file and some contain absolute paths.
 * `examples/samples.txt` - samplefile tsv containing 3 fields: sampleID, path to BAM file, path to barcodes tsv.gz file (The order of these files is important!). These paths can be IRODs paths or local paths.
 * `examples/RESUME-demultiplex` - an example run script that executes the pipeline it has 1 hardcoded argument: `/path/to/sample/file` that needs to be changed based on your local set up.
+* `bin/cellsnp.sh` - a bash script that runs cellsnp inside the pipeline.
+* `bin/shared-samples-quant.py` - a python script that produces a tsv of top clusters shared between samples.
+* `bin/shared_samples.sh` - a bash script that runs souporcell's shared samples funcitonality inside the pipeline.
 * `bin/soup_qc.sh` - a quick qc script that enables quick sanity checks that souporcell worked correctly.
+* `bin/souporcell.sh` - a bash script that runs souporcell inside the pipeline.
+* `bin/vireo.sh` - a nash script that runs vireo inside the pipeline.
 * `dockerfiles/Dockerfile-souporcell` - a dockerfile to reproduce the environment used to run souporcell in the pipeline.
 * `dockerfiles/Dockerfile-vireo` - a dockerfile to reproduce the environment used to run vireo in the pipeline.
+* `dockerfiles/Dockerfile-shared-samples-quantification` - a dockerfile to reproduce the environment used to run shared samples quantificaiton.
 
 ## Pipeline Arguments:
 * `-entry` - The entrypoint to specify which determines whether souporcell or vireo or both tools are used.
@@ -30,4 +36,4 @@ There are two branches:
 * `--skip_remap` - Whether to skip remapping in souporcell pipeline (default true means skip remapping).
 * `--no_umi` - Tells the pipeline whether the BAM files have a UMI tag (default false means BAM file has UMI tag).
 #### Vireo
-* `--vireo_vcf` - The gzipped VCF file to provide to cellSNP which is ran to generate input for vireo (default genome1K.phase3.SNP_AF5e2.chr1toX.hg38). This default argument is hardcoded and needs to be changed to your local path to the file. 
+* `--snp_vcf` - The gzipped VCF file to provide to cellSNP which is ran to generate input for vireo (default genome1K.phase3.SNP_AF5e2.chr1toX.hg38). This default argument is hardcoded and needs to be changed to your local path to the file. 
