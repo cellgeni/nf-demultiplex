@@ -56,6 +56,8 @@ RUN pip install --upgrade pip && \
     pip install --no-cache-dir Cython && \
     pip install --no-cache-dir pysam pyvcf "numpy==1.24.3" scipy pyfaidx && \
     pip install --no-cache-dir "pystan==2.19.1.1"
+      
+#pysam pyvcf "numpy<1.23.0" scipy "Cython>=0.22" pyfaidx && \
 
 # HTSlib/samtools/bcftools
 ARG SAMTOOLS="1.9"
