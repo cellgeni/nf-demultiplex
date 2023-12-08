@@ -32,7 +32,7 @@ There are two branches:
 #### Souporcell:
 * `--soc_vcf` - Path to vcf file used for souporcell (default is 2p 1k genome with chr nomenclature). This default argument is hardcoded and needs to be changed to your local path to the file. 
 * `--soc_fasta` - Path to  genome fasta for pipeline to use (by default GRCh38 2020A is used). This default argument is hardcoded and needs to be changed to your local path to the file. 
-* `--known_genotypes` - Whether to use the `known_genotypes` option. This expects an input of either "yes" or "no". If "yes" is used then the `--soc_vcf` option needs to be provided with a path to the known genotypes VCF file. The number of genotypes in the known genotypes vcf must match the number of donors supplied in the K parameter (Defualt "no" means not to use known_genotypes).
+* `--known_genotypes` - Whether to use the `known_genotypes` option. If true is used then the `--soc_vcf` option needs to be provided with a path to the known genotypes VCF file. The number of genotypes in the known genotypes vcf must match the number of donors supplied in the K parameter (Defualt false means not to use known_genotypes).
 * `--skip_remap` - Whether to skip remapping in souporcell pipeline (default true means skip remapping).
 * `--no_umi` - Tells the pipeline whether the BAM files have a UMI tag (default false means BAM file has UMI tag).
 #### Vireo
