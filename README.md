@@ -27,8 +27,8 @@ There are two branches:
 * `--SAMPLEFILE` - The path to the sample file provided to the pipeline. This is a tab-separated file with one sample per line. Each line should contain a sample id, path to bam file, path to barcodes file (in that order!).
 * `--outdir` - The path to where the results will be saved.
 * `--K` - The number of donors in the samples. All samples must contain the same number of donors.
-* `--barcodes_on_irods` - Tells pipeline whether to look for the gzipped barcodes file on IRODS or the FARM (default yes means look on IRODS).
-* `--bam_on_irods` - Tells pipeline whether to look for the bam file on IRODS or the FARM (default yes means look on IRODS).
+* `--barcodes_on_irods` - Tells pipeline whether to look for the gzipped barcodes file on IRODS or the FARM (default false means look locally).
+* `--bam_on_irods` - Tells pipeline whether to look for the bam file on IRODS or the FARM (default false means look locally).
 #### Souporcell:
 * `--soc_vcf` - Path to vcf file used for souporcell (default is 2p 1k genome with chr nomenclature). This default argument is hardcoded and needs to be changed to your local path to the file. 
 * `--soc_fasta` - Path to  genome fasta for pipeline to use (by default GRCh38 2020A is used). This default argument is hardcoded and needs to be changed to your local path to the file. 
