@@ -5,7 +5,34 @@ There are two branches:
 
 `main` - this branch contains the script for running demultiplexing on the FARM using Nextflow command line.
 
-`nextflow-tower` - this branch conrains the script for running demultiplexing on the FARM using Nextflow Tower.
+`nextflow-tower` - this branch contains the script for running demultiplexing on the FARM using Nextflow Tower.
+
+## Quick start
+First `git clone https://github.com/cellgeni/nf-demultiplex.git` into actions. Then create sample file `actions/samples.tsv`:
+<pre>
+name1	/path/to/1/bam	/path/to/1/barcodes.tsv.gz  K1
+name2	/path/to/2/bam	/path/to/2/barcodes.tsv.gz  K2
+</pre>
+
+Then run from ticket folder:
+<pre>
+screen -S tic-N
+fash 1 oversubscribed 1
+nextflow run actions/nf-demultiplex/main.nf \
+ -entry souporcell \
+ --SAMPLEFILE ../actions/samples.tsv \
+ -resume
+</pre>
+
+
+If you know number of expected genotypes you can following script to group souporcell sample-slusters:
+<pre>
+Rscript actions/nf-demultiplex/bin/group_genotypes.R actions/samples.tsv demultiplex-results/souporcell number_of_genotypes
+</pre>
+Script will produce three output files:
+* `shared_samples_loss_heatmap.pdf` heatmap of loss function and cluster grouping by sample (columns) and genotypes (rows)
+* `shared_samples_loss.csv` matrix of pairwise losses
+* `shared_samples_clusters.csv` cluster information, including cell counts and genotype group
 
 ## Contents of Repo:
 * `main.nf` - the Nextflow pipeline that executes demultiplexing.
@@ -24,7 +51,7 @@ There are two branches:
 
 ## Pipeline Arguments:
 * `-entry` - The entrypoint to specify which determines whether souporcell or vireo or both.
-* `--SAMPLEFILE` - The path to the sample file provided to the pipeline. This is a tab-separated file with one sample per line. Each line should contain a sample id, path to bam file, path to barcodes file (in that order!).
+* `--SAMPLEFILE` - The path to the sample file provided to the pipeline. This is a tab-separated file with one sample per line. Each line should contain a sample id, path to bam file, path to gzipped barcodes file, K - number of genotypes in this sample (in that order!).
 * `--outdir` - The path to where the results will be saved.
 * `--K` - The number of donors in the samples. All samples must contain the same number of donors.
 * `--barcodes_on_irods` - Tells pipeline whether to look for the gzipped barcodes file on IRODS or the FARM (default false means look locally).

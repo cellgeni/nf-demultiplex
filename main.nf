@@ -49,13 +49,14 @@ def errorMessage() {
 process get_data {
 
   input:
-  tuple val(id), val(bam_path), val(barcodes_path)
+  tuple val(id), val(bam_path), val(barcodes_path), val(K)
 
   output:
   val(id)
   path('*barcodes.tsv')
   path('*bam')
   path('*bam.bai')
+  val(K)
 
   shell:
   '''
@@ -87,10 +88,12 @@ process run_cellsnp {
   path(barcodes)
   path(bam)
   path(index)
+  val(K)
 
   output:
   val(name)
   path("*cellsnp")
+  val(K)
 
   shell:
   '''
@@ -107,13 +110,14 @@ process run_vireo {
   input:
   val(name)
   path(cellsnp)
+  val(K)
 
   output:
   path("*vireo")
 
   shell:
   '''
-  !{projectDir}/bin/vireo.sh !{name} !{cellsnp} !{params.K}
+  !{projectDir}/bin/vireo.sh !{name} !{cellsnp} !{K}
   '''
 }
 
@@ -126,13 +130,14 @@ process run_souporcell {
   path(barcodes)
   path(bam)
   path(index)
+  val(K)
 
   output:
   path(name), emit: output
 
   shell:
   '''
-  !{projectDir}/bin/souporcell.sh !{name} !{barcodes} !{bam} !{params.known_genotypes} !{params.soc_vcf} !{params.soc_fasta} !{params.K} !{params.skip_remap} !{params.no_umi}
+  !{projectDir}/bin/souporcell.sh !{name} !{barcodes} !{bam} !{params.known_genotypes} !{params.soc_vcf} !{params.soc_fasta} !{K} !{params.skip_remap} !{params.no_umi}
   !{projectDir}/bin/soup_qc.sh !{name}
   '''
 }
@@ -150,7 +155,7 @@ process run_shared_samples {
 
   shell:
   '''
-  !{projectDir}/bin/shared_samples.sh !{samplefile} !{params.K}
+  !{projectDir}/bin/shared_samples.sh !{samplefile}
   '''
 }
 
@@ -191,8 +196,7 @@ workflow vireo {
   }
   else {
     ch_sample_list = params.SAMPLEFILE != null ? Channel.fromPath(params.SAMPLEFILE) : errorMessage()
-    params.K != null ?: errorMessage()
-    ch_sample_list | flatMap{ it.readLines() } | map { it -> [ it.split()[0], it.split()[1], it.split()[2] ] } | get_data | run_cellsnp | run_vireo
+    ch_sample_list | flatMap{ it.readLines() } | map { it -> [ it.split()[0], it.split()[1], it.split()[2], it.split()[3]] } | get_data | run_cellsnp | run_vireo
   }
 }
 
@@ -203,8 +207,7 @@ workflow souporcell {
   }
   else {
     ch_sample_list = params.SAMPLEFILE != null ? Channel.fromPath(params.SAMPLEFILE) : errorMessage()
-    params.K != null ?: errorMessage()
-    ch_sample_list | flatMap{ it.readLines() } | map { it -> [ it.split()[0], it.split()[1], it.split()[2] ] } | get_data | run_souporcell
+    ch_sample_list | flatMap{ it.readLines() } | map { it -> [ it.split()[0], it.split()[1], it.split()[2], it.split()[3] ] } | get_data | run_souporcell
     ch_soc = run_souporcell.out.output | collect
     run_shared_samples(ch_soc, ch_sample_list)
   }
@@ -217,8 +220,7 @@ workflow all {
   }
   else {
     ch_sample_list = params.SAMPLEFILE != null ? Channel.fromPath(params.SAMPLEFILE) : errorMessage()
-    params.K != null ?: errorMessage()
-    ch_sample_list | flatMap{ it.readLines() } | map { it -> [ it.split()[0], it.split()[1], it.split()[2] ] } | get_data | set { ch_data }
+    ch_sample_list | flatMap{ it.readLines() } | map { it -> [ it.split()[0], it.split()[1], it.split()[2] , it.split()[2] ] } | get_data | set { ch_data }
     run_cellsnp(ch_data) | run_vireo
     run_souporcell(ch_data)
     ch_soc = run_souporcell.out.output | collect
