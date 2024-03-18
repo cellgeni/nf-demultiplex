@@ -220,7 +220,7 @@ workflow all {
   }
   else {
     ch_sample_list = params.SAMPLEFILE != null ? Channel.fromPath(params.SAMPLEFILE) : errorMessage()
-    ch_sample_list | flatMap{ it.readLines() } | map { it -> [ it.split()[0], it.split()[1], it.split()[2] , it.split()[2] ] } | get_data | set { ch_data }
+    ch_sample_list | flatMap{ it.readLines() } | map { it -> [ it.split()[0], it.split()[1], it.split()[2] , it.split()[3] ] } | get_data | set { ch_data }
     run_cellsnp(ch_data) | run_vireo
     run_souporcell(ch_data)
     ch_soc = run_souporcell.out.output | collect
