@@ -8,7 +8,6 @@ samplefile=/path/to/sample/file
 
 nextflow run main.nf \
   -entry all \
-  --SAMPLEFILE $samplefile \
-  --K donor-value     \
+  --SAMPLEFILE $samplefile \   \
   --ansi-log false \
   -resume
