@@ -12,6 +12,7 @@ soc_fasta=$6 #the reference fasta file for the organism the sample was aligned t
 k_value=$7 #the number of donors to be demultiplexed
 skip_remap=$8 #boolean value telling souporcell whether to skip remapping step or not
 no_umi=$9 #boolean value telling souporcell whether bam file contains umis or not
+ignore=False # souporcell checks first 10e5 reads and dies if less than 25% of them have barcodes not in barcode list. Usually it is ok, but one can change it to True if it fails (should it be default?).
 
 common_or_known="--common_variants"
 if "${known_genotypes}"; then
@@ -32,4 +33,5 @@ souporcell_pipeline.py                  \
   -t 8                                  \
   -o "${sample_id}"                     \
   --skip_remap "${skip_remap}"          \
-  --no_umi "${no_umi}"
+  --no_umi "${no_umi}"                  \
+  --ignore ${ignore}
