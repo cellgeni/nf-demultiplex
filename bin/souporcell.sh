@@ -30,7 +30,7 @@ souporcell_pipeline.py                  \
   -f "${soc_fasta}"                     \
   -k "${k_value}"                       \
   $common_or_known                      \
-  -t 8                                  \
+  --threads 8                           \
   -o "${sample_id}"                     \
   --skip_remap "${skip_remap}"          \
   --no_umi "${no_umi}"                  \

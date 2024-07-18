@@ -11,4 +11,4 @@ snp_vcf=$4 #SNP vcf, cellSNP has advice here: https://cellsnp-lite.readthedocs.i
 mkdir "${sample_id}-cellsnp"
 echo "cellsnp-lite -s ${bam_file} -b ${barcodes_file} -O ${sample_id}-cellsnp -R ${snp_vcf} --gzip" > "${sample_id}-cellsnp/cmd.txt"
 
-cellsnp-lite -s ${bam_file} -b ${barcodes_file} -O ${sample_id}-cellsnp -R ${snp_vcf} --gzip
+cellsnp-lite -s ${bam_file} -b ${barcodes_file} -O ${sample_id}-cellsnp -R ${snp_vcf} --gzip --nproc 16
