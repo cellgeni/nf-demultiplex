@@ -20,7 +20,7 @@ screen -S tic-N
 fash 1 oversubscribed 1
 nextflow run actions/nf-demultiplex/main.nf \
  -entry souporcell \
- --SAMPLEFILE ../actions/samples.tsv \
+ --SAMPLEFILE actions/samples.tsv \
  -resume
 </pre>
 
