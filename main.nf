@@ -52,11 +52,7 @@ process get_data {
   tuple val(id), val(bam_path), val(barcodes_path), val(K)
 
   output:
-  val(id)
-  path('*barcodes.tsv')
-  path('*bam')
-  path('*bam.bai')
-  val(K)
+  tuple val(id), path('*barcodes.tsv'), path('*bam'), path('*bam.bai'), val(K)
 
   shell:
   '''
@@ -84,11 +80,7 @@ process run_cellsnp {
   publishDir "${params.outdir}/vireo/cellsnp", mode: 'copy'
 
   input:
-  val(name)
-  path(barcodes)
-  path(bam)
-  path(index)
-  val(K)
+  tuple val(name), path(barcodes), path(bam), path(index), val(K)
 
   output:
   val(name)
@@ -126,11 +118,7 @@ process run_souporcell {
   publishDir "${params.outdir}/souporcell", mode: 'copy'
 
   input:
-  val(name)
-  path(barcodes)
-  path(bam)
-  path(index)
-  val(K)
+  tuple val(name), path(barcodes), path(bam), path(index), val(K)
 
   output:
   path(name), emit: output
@@ -221,7 +209,8 @@ workflow all {
   else {
     ch_sample_list = params.SAMPLEFILE != null ? Channel.fromPath(params.SAMPLEFILE) : errorMessage()
     ch_sample_list | flatMap{ it.readLines() } | map { it -> [ it.split()[0], it.split()[1], it.split()[2] , it.split()[3] ] } | get_data | set { ch_data }
-    run_cellsnp(ch_data) | run_vireo
+	ch_data_vireo = ch_data.filter { it[4].toInteger() > 1}
+    run_cellsnp(ch_data_vireo) | run_vireo
     run_souporcell(ch_data)
     ch_soc = run_souporcell.out.output | collect
     run_shared_samples(ch_soc, ch_sample_list)
