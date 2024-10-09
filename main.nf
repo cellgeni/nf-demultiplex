@@ -282,6 +282,7 @@ workflow souporcell {
     ch_sample_list | flatMap{ it.readLines() } | map { it -> [ it.split()[0], it.split()[1], it.split()[2], it.split()[3] ] } | get_data | run_souporcell
     ch_soc = run_souporcell.out.output | collect
     run_shared_samples(ch_soc, ch_sample_list)
+    group_shared_samples(run_shared_samples.out.mapping,ch_soc,ch_sample_list)
   }
 }
 
@@ -293,7 +294,7 @@ workflow all {
   else {
     ch_sample_list = params.SAMPLEFILE != null ? Channel.fromPath(params.SAMPLEFILE) : errorMessage()
     ch_sample_list | flatMap{ it.readLines() } | map { it -> [ it.split()[0], it.split()[1], it.split()[2] , it.split()[3] ] } | get_data | set { ch_data }
-	ch_data_vireo = ch_data.filter { it[4].toInteger() > 1}
+	  ch_data_vireo = ch_data.filter { it[4].toInteger() > 1}
     run_cellsnp(ch_data_vireo) | run_vireo
     run_souporcell(ch_data)
     ch_soc = run_souporcell.out.output | collect
