@@ -24,15 +24,10 @@ nextflow run actions/nf-demultiplex/main.nf \
  -resume
 </pre>
 
-
-If you know number of expected genotypes you can following script to group souporcell sample-slusters:
-<pre>
-Rscript actions/nf-demultiplex/bin/group_genotypes.R actions/samples.tsv demultiplex-results/souporcell number_of_genotypes
-</pre>
-Script will produce three output files:
-* `shared_samples_loss_heatmap.pdf` heatmap of loss function and cluster grouping by sample (columns) and genotypes (rows)
-* `shared_samples_loss.csv` matrix of pairwise losses
-* `shared_samples_clusters.csv` cluster information, including cell counts and genotype group
+NOTEs
+1. Specify `ngenomes`, if you  now how many genotypes (donors) should be present whole dataset (see below).
+2. See `check_sex` below if you need to identify donor sex.
+3. pipeline expects chromosomes names to include "chr" ("chr1" not "1"). You'll meed to change `soc_vcf` and `soc_fasta` if your bam file uses no-chr naming, see commented lines in `nextflow.config`.
 
 ## Contents of Repo:
 * `main.nf` - the Nextflow pipeline that executes demultiplexing.
@@ -62,5 +57,7 @@ Script will produce three output files:
 * `--known_genotypes` - Whether to use the `known_genotypes` option. If true is used then the `--soc_vcf` option needs to be provided with a path to the known genotypes VCF file. The number of genotypes in the known genotypes vcf must match the number of donors supplied in the K parameter (Defualt false means not to use known_genotypes).
 * `--skip_remap` - Whether to skip remapping in souporcell pipeline (default true means skip remapping).
 * `--no_umi` - Tells the pipeline whether the BAM files have a UMI tag (default false means BAM file has UMI tag).
+* `--ngenomes` - number of expected genotypes (donors) in whole dataset. Pipeline attempts to cluster souporcell clusters by genotypes, according to loss reported by shared_samples script. By default it guesses number of genotypes, but it will work better if you specify it using this parameter.
+* `--check_sex` - set it to `true` if you want pipeline to identify donor sexes using XIST/RPS4Y1 expressions. It is experimental, it expects `filtered_feature_bc_matrix` to be in the same place as bams and right now it only implemented for `all` workflow (that is both vireo and souporcell) - just because I'm lazy. Pipeline will generate `sex` folder with two csv files (for souporcell and vireo) with summary statistics about XIST/RPS4Y1 expression in predicted donors and assigned sex. It will also generate some figures.
 #### Vireo
 * `--snp_vcf` - The gzipped VCF file to provide to cellSNP which is ran to generate input for vireo (default genome1K.phase3.SNP_AF5e2.chr1toX.hg38). This default argument is hardcoded and needs to be changed to your local path to the file. 

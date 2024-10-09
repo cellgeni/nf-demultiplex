@@ -47,7 +47,8 @@ def errorMessage() {
 }
 
 process get_data {
-
+  label 'get_data'
+  
   input:
   tuple val(id), val(bam_path), val(barcodes_path), val(K)
 
@@ -105,7 +106,7 @@ process run_vireo {
   val(K)
 
   output:
-  path("*vireo")
+  path("*vireo"), emit: output
 
   shell:
   '''
@@ -177,6 +178,89 @@ process quantify_shared_samples {
   '''
 }
 
+process group_shared_samples {
+  label 'rscript'
+  publishDir "${params.outdir}/souporcell", mode: 'copy'
+
+  input:
+  path(shared_samples, stageAs: "shared_samples/*") 
+  path(souporcell, stageAs: "souporcell/*") 
+  path(samplefile)
+
+  output:
+  path('group_samples')
+
+  shell:
+  '''
+  Rscript !{projectDir}/bin/group_genotypes.R shared_samples souporcell !{samplefile} !{params.ngenomes}
+  '''
+}
+
+process compare_methods {
+  label 'rscript'
+  
+  publishDir "${params.outdir}/compare_methods", mode: 'copy'
+  
+  input:
+  path(souporcell, stageAs: "souporcell/*") 
+  path(vireo, stageAs: "vireo/*")
+  path(samplefile)
+  
+  output:
+  path('soc2vir*')
+
+  shell:
+  '''
+  Rscript !{projectDir}/bin/compare_methods.R !{samplefile}
+  '''
+}
+
+process get_gex_data {
+  label 'get_data'
+  
+  input:
+  path(samplefile)
+  
+  output:
+  path('out/*')
+
+  shell:
+  '''
+  mkdir out
+  # load expression data 
+  if "!{params.barcodes_on_irods}"; then
+    cmd='iget'
+  else
+    cmd='cp'
+  fi
+  
+  while read name bam b n; 
+  do 
+   ${cmd} -r $(dirname $bam)/filtered_feature_bc_matrix out/${name}
+  done < !{samplefile}
+  '''
+}
+
+process check_sex {
+  label 'rscript'
+  
+  publishDir "${params.outdir}/", mode: 'copy'
+  
+  input:
+  path(souporcell, stageAs: "souporcell/*") 
+  path(vireo, stageAs: "vireo/*")
+  path(gex, stageAs: "gex/*")
+  path(samplefile)
+  
+  output:
+  path('sex')
+
+  shell:
+  '''
+  Rscript !{projectDir}/bin/check_sex.R !{samplefile}
+  '''
+}
+
 workflow vireo {
   if (params.HELP) {
     helpMessage()
@@ -213,7 +297,14 @@ workflow all {
     run_cellsnp(ch_data_vireo) | run_vireo
     run_souporcell(ch_data)
     ch_soc = run_souporcell.out.output | collect
+    ch_vir = run_vireo.out.output | collect
     run_shared_samples(ch_soc, ch_sample_list)
+    // quantify_shared_samples is older version of group_shared_samples and probably should be depricated
     quantify_shared_samples(run_shared_samples.out.mapping)
+    group_shared_samples(run_shared_samples.out.mapping,ch_soc,ch_sample_list)
+    compare_methods(ch_soc, ch_vir, ch_sample_list)
+    get_gex_data(ch_sample_list)
+    if(params.check_sex)
+      check_sex(ch_soc, ch_vir, get_gex_data.out, ch_sample_list)
   }
 }
