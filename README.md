@@ -27,7 +27,7 @@ nextflow run actions/nf-demultiplex/main.nf \
 NOTEs
 1. Specify `ngenomes`, if you  now how many genotypes (donors) should be present whole dataset (see below).
 2. See `check_sex` below if you need to identify donor sex.
-3. pipeline expects chromosomes names to include "chr" ("chr1" not "1"). You'll meed to change `soc_vcf` and `soc_fasta` if your bam file uses no-chr naming, see commented lines in `nextflow.config`.
+3. pipeline expects chromosomes names to include "chr" ("chr1" not "1"). You'll need to change `soc_vcf` and `soc_fasta` if your bam file uses no-chr naming, see commented lines in `nextflow.config`.
 
 ## Contents of Repo:
 * `main.nf` - the Nextflow pipeline that executes demultiplexing.
