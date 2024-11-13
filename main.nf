@@ -61,14 +61,14 @@ process get_data {
     iget -f -v -K "!{bam_path}" "!{id}.bam"
     iget -f -v -K "!{bam_path}.bai" "!{id}.bam.bai"
   else
-    cp "!{bam_path}" "!{id}.bam"
-    cp "!{bam_path}.bai" "!{id}.bam.bai"
+    ln -s "!{bam_path}" "!{id}.bam"
+    ln -s "!{bam_path}.bai" "!{id}.bam.bai"
   fi
   if "!{params.barcodes_on_irods}"; then
     iget -f -v -K "!{barcodes_path}" "!{id}.barcodes.tsv.gz"
     gunzip -f "!{id}.barcodes.tsv.gz"
   else
-    cp "!{barcodes_path}" "!{id}.barcodes.tsv.gz"
+    ln -s "!{barcodes_path}" "!{id}.barcodes.tsv.gz"
     gunzip -f "!{id}.barcodes.tsv.gz"
   fi
   '''
