@@ -72,7 +72,7 @@ if(length(args)==3){
   if(is.na(ngenotypes))
     ngenotypes = which.max(gap)
 }else
-  ngenotypes = as.integer(args[3])
+  ngenotypes = as.integer(args[4])
 hcl = hclust(as.dist(cmp$mtx))
 cl = cutree(hcl,k=ngenotypes)
 cmp$clsizes$genotype_cluster = cl[rownames(cmp$clsizes)]
