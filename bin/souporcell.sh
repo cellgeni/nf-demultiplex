@@ -14,6 +14,9 @@ skip_remap=$8 #boolean value telling souporcell whether to skip remapping step o
 no_umi=$9 #boolean value telling souporcell whether bam file contains umis or not
 ignore=False # souporcell checks first 10e5 reads and dies if less than 25% of them have barcodes not in barcode list. Usually it is ok, but one can change it to True if it fails (should it be default?).
 
+
+echo "Number of barcodes: $( cat ${barcodes_file} | wc -l )"
+
 common_or_known="--common_variants"
 if "${known_genotypes}"; then
    common_or_known="--known_genotypes"

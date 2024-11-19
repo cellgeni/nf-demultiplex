@@ -268,7 +268,9 @@ workflow vireo {
   }
   else {
     ch_sample_list = params.SAMPLEFILE != null ? Channel.fromPath(params.SAMPLEFILE) : errorMessage()
-    ch_sample_list | flatMap{ it.readLines() } | map { it -> [ it.split()[0], it.split()[1], it.split()[2], it.split()[3]] } | get_data | run_cellsnp | run_vireo
+    ch_sample_list | flatMap{ it.readLines() } | map { it -> [ it.split()[0], it.split()[1], it.split()[2], it.split()[3]] } | get_data | set { ch_data }
+    ch_data_vireo = ch_data.filter { it[4].toInteger() > 1}
+    run_cellsnp(ch_data_vireo) | run_vireo
   }
 }
 
@@ -294,7 +296,7 @@ workflow all {
   else {
     ch_sample_list = params.SAMPLEFILE != null ? Channel.fromPath(params.SAMPLEFILE) : errorMessage()
     ch_sample_list | flatMap{ it.readLines() } | map { it -> [ it.split()[0], it.split()[1], it.split()[2] , it.split()[3] ] } | get_data | set { ch_data }
-	  ch_data_vireo = ch_data.filter { it[4].toInteger() > 1}
+    ch_data_vireo = ch_data.filter { it[4].toInteger() > 1}
     run_cellsnp(ch_data_vireo) | run_vireo
     run_souporcell(ch_data)
     ch_soc = run_souporcell.out.output | collect
@@ -304,8 +306,9 @@ workflow all {
     quantify_shared_samples(run_shared_samples.out.mapping)
     group_shared_samples(run_shared_samples.out.mapping,ch_soc,ch_sample_list)
     compare_methods(ch_soc, ch_vir, ch_sample_list)
-    get_gex_data(ch_sample_list)
-    if(params.check_sex)
+    if(params.check_sex){
+      get_gex_data(ch_sample_list)
       check_sex(ch_soc, ch_vir, get_gex_data.out, ch_sample_list)
+    }
   }
 }
