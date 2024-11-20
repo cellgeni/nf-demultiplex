@@ -44,7 +44,7 @@ dev.off()
 
 # find best match
 pairs = NULL
-for(i in seq_len(nrow(samples))){
+for(i in which(samples$n>1)){
   x = soc2vir[[i]][as.character(0:(samples$n[i]-1)),paste0('donor',0:(samples$n[i]-1))]
   p = RcppHungarian::HungarianSolver(-x)$pairs 
   p = data.frame(sample_id = samples$sid[i],

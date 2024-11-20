@@ -89,8 +89,8 @@ plotSexGeneExpNCell = function(d,cols=c('undef'='gray','F'='red','M'='blue'),...
 
 
 # save results ########
-write.csv(soc_sex,'sex/souporcell_sex_aignment.csv')
-write.csv(vir_sex,'sex/vireo_sex_aignment.csv')
+write.csv(soc_sex,'sex/souporcell_sex_assignment.csv')
+write.csv(vir_sex,'sex/vireo_sex_assignment.csv')
 
 pdf('sex/donor_XIST_RPS4Y1_expression.pdf',height = 7,width = 7)
 par(mfrow=c(2,2),tcl=-0.2,mgp=c(1.3,0.3,0),mar=c(3,3,1.5,0),oma=c(0,0,0,1))
