@@ -55,22 +55,26 @@ sids = read.table(args[3])
 cmp = loadAllComps(sids$V1,args[1],args[2])
 rownames(cmp$clsizes) = paste0(cmp$clsizes$name,'|',cmp$clsizes$group)
 if(length(args)==3){
-  library(cluster)
-  gap.stat = clusGap(cmp$mtx, FUNcluster = function(d,k){
-    hcl = hclust(as.dist(d))
-    list(cluster=cutree(hcl,k))
-  }, K.max = nrow(cmp$mtx)-1)
-  gap = gap.stat$Tab[,'gap']
-  # look for first maximum
-  ngenotypes = NA
-  if(length(gap)>2){
-    l = length(gap)
-    inx = which(gap[-c(1,l)] > gap[-c(l-1,l)] & gap[-c(1,l)] > gap[-1:-2])
-    if(length(inx)>0)
-      ngenotypes = min(inx)
+  if(ncol(cmp$mtx)==2)
+    ngenotypes = 2
+  else{
+    library(cluster)
+    gap.stat = clusGap(cmp$mtx, FUNcluster = function(d,k){
+        hcl = hclust(as.dist(d))
+        list(cluster=cutree(hcl,k))
+    }, K.max = nrow(cmp$mtx)-1)
+    gap = gap.stat$Tab[,'gap']
+    # look for first maximum
+    ngenotypes = NA
+    if(length(gap)>2){
+        l = length(gap)
+        inx = which(gap[-c(1,l)] > gap[-c(l-1,l)] & gap[-c(1,l)] > gap[-1:-2])
+        if(length(inx)>0)
+         ngenotypes = min(inx)
+    }
+    if(is.na(ngenotypes))
+        ngenotypes = which.max(gap)
   }
-  if(is.na(ngenotypes))
-    ngenotypes = which.max(gap)
 }else
   ngenotypes = as.integer(args[4])
 hcl = hclust(as.dist(cmp$mtx))
