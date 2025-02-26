@@ -9,14 +9,13 @@ def helpMessage() {
     The parameters you need to input are:
       --SAMPLEFILE /full/path/to/sample/file 
       -K k-value
+      --known_genotypes false - change to true to use known donor genotypes
     This file should be a tsv with 3 columns: SAMPLEID\t/PATH/TO/BAM/\t/PATH/TO/BARCODES
     Each line should only contain information on a single sample.
     An example can be seen here: https://github.com/cellgeni/nf-demultiplex/blob/main/examples/samples.txt
     ----------
     souporcell
     ----------
-    Souporcell uses a common variants file by default, to use a known genotypes vcf please use:
-    --known_genotypes true
     The default reference fasta used is: GRCh38_v32_modified (2020A)
     The default common variants vcf used is: filtered_2p_1kgenomes_GRCh38
     To change these defaults input:
@@ -110,7 +109,7 @@ process run_vireo {
 
   shell:
   '''
-  !{projectDir}/bin/vireo.sh !{name} !{cellsnp} !{K}
+  !{projectDir}/bin/vireo.sh !{name} !{cellsnp} !{K} !{params.known_genotypes} !{params.snp_vcf} !{params.vireo_genoTag}
   '''
 }
 
@@ -234,7 +233,7 @@ process get_gex_data {
     cmd='cp'
   fi
   
-  while read name bam b n; 
+  while read -r name bam b n || [ -n "$name" ];
   do 
    ${cmd} -r $(dirname $bam)/filtered_feature_bc_matrix out/${name}
   done < !{samplefile}
