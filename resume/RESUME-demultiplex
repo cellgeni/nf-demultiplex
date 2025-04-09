@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -euo pipefail
+
+samplefile=actions/samples.txt
+
+[[ -e "$samplefile" ]] || (echo "File "$samplefile" not found" && false)
+
+nextflow run -r 23-328 cellgeni/nf-demultiplex \
+  -entry all \
+  --SAMPLEFILE $samplefile \
+  --ngenomes '' \
+  --check_sex false \
+  --ansi-log false \
+  -resume
