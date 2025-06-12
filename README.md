@@ -19,8 +19,11 @@ Then run from ticket folder:
 screen -S tic-N
 fash 1 oversubscribed 1
 nextflow run actions/nf-demultiplex/main.nf \
- -entry souporcell \
+ -entry all \
  --SAMPLEFILE actions/samples.tsv \
+ --barcodes_on_irods \
+ --bam_on_irods \
+ --check_sex \
  -resume
 </pre>
 
@@ -48,16 +51,15 @@ NOTEs
 * `-entry` - The entrypoint to specify which determines whether souporcell or vireo or both.
 * `--SAMPLEFILE` - The path to the sample file provided to the pipeline. This is a tab-separated file with one sample per line. Each line should contain a sample id, path to bam file, path to gzipped barcodes file, K - number of genotypes in this sample (in that order!).
 * `--outdir` - The path to where the results will be saved.
-* `--K` - The number of donors in the samples. All samples must contain the same number of donors.
 * `--barcodes_on_irods` - Tells pipeline whether to look for the gzipped barcodes file on IRODS or the FARM (default false means look locally).
 * `--bam_on_irods` - Tells pipeline whether to look for the bam file on IRODS or the FARM (default false means look locally).
+* `--known_genotypes` - Whether to use the `known_genotypes/donorFile` option in souporcell/vireo. If true is used then the `--soc_vcf/--snp_vcf` option needs to be provided with a path to the known genotypes VCF file. The number of genotypes in the known genotypes vcf must match the number of donors supplied in the K parameter (Defualt false means not to use known_genotypes).
+* `--check_sex` - set it to `true` if you want pipeline to identify donor sexes using XIST/RPS4Y1 expressions. It is experimental, it expects `filtered_feature_bc_matrix` to be in the same place as bams and right now it only implemented for `all` workflow (that is both vireo and souporcell) - just because I'm lazy. Pipeline will generate `sex` folder with two csv files (for souporcell and vireo) with summary statistics about XIST/RPS4Y1 expression in predicted donors and assigned sex. It will also generate some figures.
 #### Souporcell:
 * `--soc_vcf` - Path to vcf file used for souporcell (default is 2p 1k genome with chr nomenclature). This default argument is hardcoded and needs to be changed to your local path to the file. 
 * `--soc_fasta` - Path to  genome fasta for pipeline to use (by default GRCh38 2020A is used). This default argument is hardcoded and needs to be changed to your local path to the file. 
-* `--known_genotypes` - Whether to use the `known_genotypes` option. If true is used then the `--soc_vcf` option needs to be provided with a path to the known genotypes VCF file. The number of genotypes in the known genotypes vcf must match the number of donors supplied in the K parameter (Defualt false means not to use known_genotypes).
 * `--skip_remap` - Whether to skip remapping in souporcell pipeline (default true means skip remapping).
 * `--no_umi` - Tells the pipeline whether the BAM files have a UMI tag (default false means BAM file has UMI tag).
 * `--ngenomes` - number of expected genotypes (donors) in whole dataset. Pipeline attempts to cluster souporcell clusters by genotypes, according to loss reported by shared_samples script. By default it guesses number of genotypes, but it will work better if you specify it using this parameter.
-* `--check_sex` - set it to `true` if you want pipeline to identify donor sexes using XIST/RPS4Y1 expressions. It is experimental, it expects `filtered_feature_bc_matrix` to be in the same place as bams and right now it only implemented for `all` workflow (that is both vireo and souporcell) - just because I'm lazy. Pipeline will generate `sex` folder with two csv files (for souporcell and vireo) with summary statistics about XIST/RPS4Y1 expression in predicted donors and assigned sex. It will also generate some figures.
 #### Vireo
 * `--snp_vcf` - The gzipped VCF file to provide to cellSNP which is ran to generate input for vireo (default genome1K.phase3.SNP_AF5e2.chr1toX.hg38). This default argument is hardcoded and needs to be changed to your local path to the file. 
