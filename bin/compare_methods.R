@@ -44,8 +44,9 @@ dev.off()
 
 # find best match
 pairs = NULL
+nodonors = c('doublet','unassigned')
 for(i in which(samples$n>1)){
-  x = soc2vir[[i]][as.character(0:(samples$n[i]-1)),paste0('donor',0:(samples$n[i]-1))]
+  x = soc2vir[[i]][!(rownames(soc2vir[[i]]) %in% nodonors),!(colnames(soc2vir[[i]]) %in% nodonors)]
   p = RcppHungarian::HungarianSolver(-x)$pairs 
   p = data.frame(sample_id = samples$sid[i],
              souporcell = rownames(x)[p[,1]],
