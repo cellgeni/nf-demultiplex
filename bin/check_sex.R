@@ -1,46 +1,17 @@
 args = commandArgs(trailingOnly = TRUE)
 samples = read.table(args[1])[,1]
 
-dir.create('sex',recursive = TRUE,showWarnings = FALSE)
-
-# check it carefully 
-gex = lapply(samples,function(s)Seurat::Read10X(paste0('gex/',s)))
-soc = lapply(samples,function(s)read.table(paste0('souporcell/',s,'/clusters.tsv'),header = T,row.names = 1))
-
-# vireo cannot berun with k=1, so lets put NULL on these places
-vir = lapply(samples,function(s){
-  fn = paste0('vireo/',s,'-vireo/donor_ids.tsv')
-  if(!file.exists(fn))
-    return(NULL)
-  read.table(fn,header = T,row.names = 1)
-})
-
-names(gex) = names(soc) = names(vir) = samples
-
-
-# make sure barcode order is the same
-for(i in 1:length(samples)){
-  if(!is.null(vir[[i]]))
-    vir[[i]] = vir[[i]][colnames(gex[[i]]),]
-  soc[[i]] = soc[[i]][colnames(gex[[i]]),]
-  soc[[i]]$donor = soc[[i]]$assignment
-  f = soc[[i]]$status!='singlet'
-  soc[[i]]$donor[f] = soc[[i]]$status[f]
-}
-
-# _looks on gender ############
-# sex_gids = c('F'='XIST','M'='RPS4Y1')
+# functions ################
 calSexGeneExpression = function(gex,groups,thr=2){
   result = NULL
   for(s in names(gex)){
     if(is.null(groups[[s]])) next
     
     
-    pb = as.matrix(visutils::calcColSums(gex[[s]],groups[[s]]$donor))
+    pb = as.matrix(visutils::calcColSums(gex[[s]],groups[[s]]$donor_id))
     pb = sweep(pb,2,colSums(pb),'/')*1e4
     
-    nc = as.matrix(visutils::calcColSums(gex[[s]]>0,groups[[s]]$donor))
-    nc = sweep(nc,2,colSums(nc),'/')
+    nc = as.matrix(visutils::calcColSums(gex[[s]]>0,groups[[s]]$donor_id,mean = TRUE))
     
     donors =  setdiff(colnames(pb),c('doublet','unassigned'))
     for(d in donors){
@@ -58,9 +29,6 @@ calSexGeneExpression = function(gex,groups,thr=2){
   result$sex[result$XIST_cpm*thr < result$RPS4Y1_cpm] = 'M'
   result
 }
-thr=2
-soc_sex = calSexGeneExpression(gex,soc,thr=thr)
-vir_sex = calSexGeneExpression(gex,vir,thr=thr)
 
 plotSexGeneExp = function(d,thr,cols=c('undef'='gray','F'='red','M'='blue'),...){
   pc = c(d$XIST_cpm,d$RPS4Y1_cpm)
@@ -87,8 +55,38 @@ plotSexGeneExpNCell = function(d,cols=c('undef'='gray','F'='red','M'='blue'),...
   abline(a=0,b=1)
 }
 
+# load data ################
+gex = lapply(samples,function(s)Seurat::Read10X(paste0('gex/',s)))
+soc = lapply(samples,function(s)read.table(paste0('souporcell/',s,'/clusters.tsv'),header = T,row.names = 1))
+
+# vireo cannot be run with k=1, so lets put NULL on these places
+vir = lapply(samples,function(s){
+  fn = paste0('vireo/',s,'-vireo/donor_ids.tsv')
+  if(!file.exists(fn))
+    return(NULL)
+  read.table(fn,header = T,row.names = 1)
+})
+names(gex) = names(soc) = names(vir) = samples
+
+
+# make sure barcode order is the same and make donor_id column for soc
+for(i in 1:length(samples)){
+  if(!is.null(vir[[i]]))
+    vir[[i]] = vir[[i]][colnames(gex[[i]]),]
+  soc[[i]] = soc[[i]][colnames(gex[[i]]),]
+  soc[[i]]$donor_id = soc[[i]]$assignment
+  f = soc[[i]]$status!='singlet'
+  soc[[i]]$donor_id[f] = soc[[i]]$status[f]
+}
+
+# _looks on gender ############
+thr=2
+soc_sex = calSexGeneExpression(gex,soc,thr=thr)
+vir_sex = calSexGeneExpression(gex,vir,thr=thr)
+
 
 # save results ########
+dir.create('sex',recursive = TRUE,showWarnings = FALSE)
 write.csv(soc_sex,'sex/souporcell_sex_assignment.csv')
 write.csv(vir_sex,'sex/vireo_sex_assignment.csv')
 
@@ -106,19 +104,19 @@ gids = c('F'='XIST','M'='RPS4Y1')
 nrow = floor(sqrt(length(samples)))
 ncol = ceiling(length(samples)/nrow)
 
-dcol = visutils::char2col(unlist(lapply(soc,function(x)x$donor)))
+dcol = visutils::char2col(unlist(lapply(soc,function(x)x$donor_id)))
 png('sex/XIST_RPS4Y1_in_cells_souporcell.png',units = 'in',res = 400,height = nrow*3,width = ncol*3)
 par(mfrow=c(nrow,ncol),tcl=-0.2,mgp=c(1.3,0.3,0),mar=c(3,3,1.5,0),oma=c(0,0,0,1))
 for(sid in names(soc)){
   exp = sweep(t(as.matrix(gex[[sid]][gids,])),1,Matrix::colSums(gex[[sid]]),'/')*1e4
-  plot(exp+1+runif(length(exp),-0.2,0.2),col=dcol[soc[[sid]]$donor],log='xy',pch=16,cex=0.3,main=sid,xlab='CP10K(XIST) + 1',ylab='CP10K(RPS4Y1) + 1')
-  f = names(dcol) %in% soc[[sid]]$donor
+  plot(exp+1+runif(length(exp),-0.2,0.2),col=dcol[soc[[sid]]$donor_id],log='xy',pch=16,cex=0.3,main=sid,xlab='CP10K(XIST) + 1',ylab='CP10K(RPS4Y1) + 1')
+  f = names(dcol) %in% soc[[sid]]$donor_id
   legend('topright',col=dcol[f],legend=names(dcol)[f],pch=16)
 }
 dev.off()
 
 
-dcol = visutils::char2col(unlist(lapply(vir,function(x)x$donor)))
+dcol = visutils::char2col(unlist(lapply(vir,function(x)x$donor_id)))
 png('sex/XIST_RPS4Y1_in_cells_vireo.png',units = 'in',res = 400,nrow*3,width = ncol*3)
 par(mfrow=c(nrow,ncol),tcl=-0.2,mgp=c(1.3,0.3,0),mar=c(3,3,1.5,0),oma=c(0,0,0,1))
 for(sid in names(vir)){
@@ -127,8 +125,8 @@ for(sid in names(vir)){
     next
   }
   exp = sweep(t(as.matrix(gex[[sid]][gids,])),1,Matrix::colSums(gex[[sid]]),'/')*1e4
-  plot(exp+1+runif(length(exp),-0.2,0.2),col=dcol[vir[[sid]]$donor],log='xy',pch=16,cex=0.3,main=sid,xlab='CP10K(XIST) + 1',ylab='CP10K(RPS4Y1) + 1')
-  f = names(dcol) %in% vir[[sid]]$donor
+  plot(exp+1+runif(length(exp),-0.2,0.2),col=dcol[vir[[sid]]$donor_id],log='xy',pch=16,cex=0.3,main=sid,xlab='CP10K(XIST) + 1',ylab='CP10K(RPS4Y1) + 1')
+  f = names(dcol) %in% vir[[sid]]$donor_id
   legend('topright',col=dcol[f],legend=names(dcol)[f],pch=16)
 }
 dev.off()
