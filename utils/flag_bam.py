@@ -1,8 +1,8 @@
 import pysam
 import sys
 
-#run with the bam name as the first positional argument
-#(and have the bam name be the sample name)
+# this script was originally written by kp9
+
 bampath = sys.argv[1]
 bamout = sys.argv[2]
 sample = sys.argv[3]
