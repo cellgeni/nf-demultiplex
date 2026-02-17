@@ -45,10 +45,6 @@ def errorMessage() {
     exit 1
 }
 
-def parseSampleFile(sampleFileChannel) {
-  sampleFileChannel | flatMap { it.readLines() } | map { it -> [it.split()[0], it.split()[1], it.split()[2], it.split()[3]] }
-}
-
 process get_data {
   label 'get_data'
   
@@ -317,10 +313,11 @@ process check_sex {
 
 workflow resolve_inputs {
   take:
-  ch_data_raw
   ch_sample_list
 
   main:
+  ch_data_raw = ch_sample_list | flatMap { it.readLines() } | map { it -> [it.split()[0], it.split()[1], it.split()[2], it.split()[3]] } | get_data
+
   if (params.merge_bams) {
     prepare_bam_for_merge(ch_data_raw)
     ch_merge_inputs = prepare_bam_for_merge.out.prepared
@@ -348,8 +345,7 @@ workflow vireo {
   }
   else {
     ch_sample_list = params.SAMPLEFILE != null ? Channel.fromPath(params.SAMPLEFILE) : errorMessage()
-    parseSampleFile(ch_sample_list) | get_data | set { ch_data_raw }
-    resolve_inputs(ch_data_raw, ch_sample_list)
+    resolve_inputs(ch_sample_list)
     ch_data = resolve_inputs.out.data
 
     ch_data_vireo = ch_data.filter { it[4].toInteger() > 1}
@@ -364,8 +360,7 @@ workflow souporcell {
   }
   else {
     ch_sample_list = params.SAMPLEFILE != null ? Channel.fromPath(params.SAMPLEFILE) : errorMessage()
-    parseSampleFile(ch_sample_list) | get_data | set { ch_data_raw }
-    resolve_inputs(ch_data_raw, ch_sample_list)
+    resolve_inputs(ch_sample_list)
     ch_data = resolve_inputs.out.data
     ch_sample_list_effective = resolve_inputs.out.samplefile
 
@@ -383,8 +378,7 @@ workflow all {
   }
   else {
     ch_sample_list = params.SAMPLEFILE != null ? Channel.fromPath(params.SAMPLEFILE) : errorMessage()
-    parseSampleFile(ch_sample_list) | get_data | set { ch_data_raw }
-    resolve_inputs(ch_data_raw, ch_sample_list)
+    resolve_inputs(ch_sample_list)
     ch_data = resolve_inputs.out.data
     ch_sample_list_effective = resolve_inputs.out.samplefile
 
