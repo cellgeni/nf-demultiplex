@@ -123,6 +123,7 @@ process merge_bams {
   val(k_values)
 
   output:
+  tuple val('all'), path('merged_barcodes_all.tsv'), path('merged_all.bam'), path('merged_all.bam.bai'), path('merged_k.txt'), emit: merged_data
   path('samples_merged.tsv'), emit: samplefile
 
   script:
@@ -139,7 +140,9 @@ process merge_bams {
   for f in \$(ls -1 *.prefixed.barcodes.tsv | sort); do
     cat "\$f"
   done > merged_barcodes_all.tsv
-  gzip -f merged_barcodes_all.tsv
+  gzip -c merged_barcodes_all.tsv > merged_barcodes_all.tsv.gz
+
+  printf "%s\\n" "${merged_k}" > merged_k.txt
 
   printf "%s\\t%s\\t%s\\t%s\\n" "all" "\$PWD/merged_all.bam" "\$PWD/merged_barcodes_all.tsv.gz" "${merged_k}" > samples_merged.tsv
   """
@@ -329,7 +332,7 @@ workflow vireo {
         ch_merge_inputs.map { it[1] }.collect(),
         ch_merge_inputs.map { it[2] }.collect()
       )
-      parseSampleFile(merge_bams.out.samplefile) | get_data | set { ch_data }
+      ch_data = merge_bams.out.merged_data.map { id, barcodes, bam, bai, k_file -> [id, barcodes, bam, bai, k_file.text.trim()] }
     } else {
       ch_data = ch_data_raw
     }
@@ -357,7 +360,7 @@ workflow souporcell {
         ch_merge_inputs.map { it[2] }.collect()
       )
       ch_sample_list_effective = merge_bams.out.samplefile
-      parseSampleFile(ch_sample_list_effective) | get_data | set { ch_data }
+      ch_data = merge_bams.out.merged_data.map { id, barcodes, bam, bai, k_file -> [id, barcodes, bam, bai, k_file.text.trim()] }
     } else {
       ch_data = ch_data_raw
       ch_sample_list_effective = ch_sample_list
@@ -388,7 +391,7 @@ workflow all {
         ch_merge_inputs.map { it[2] }.collect()
       )
       ch_sample_list_effective = merge_bams.out.samplefile
-      parseSampleFile(ch_sample_list_effective) | get_data | set { ch_data }
+      ch_data = merge_bams.out.merged_data.map { id, barcodes, bam, bai, k_file -> [id, barcodes, bam, bai, k_file.text.trim()] }
     } else {
       ch_data = ch_data_raw
       ch_sample_list_effective = ch_sample_list
