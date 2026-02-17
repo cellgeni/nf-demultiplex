@@ -315,6 +315,32 @@ process check_sex {
   '''
 }
 
+workflow resolve_inputs {
+  take:
+  ch_data_raw
+  ch_sample_list
+
+  main:
+  if (params.merge_bams) {
+    prepare_bam_for_merge(ch_data_raw)
+    ch_merge_inputs = prepare_bam_for_merge.out.prepared
+    merge_bams(
+      ch_merge_inputs.map { it[0] }.collect(),
+      ch_merge_inputs.map { it[1] }.collect(),
+      ch_merge_inputs.map { it[2] }.collect()
+    )
+    ch_data = merge_bams.out.merged_data.map { id, barcodes, bam, bai, k_file -> [id, barcodes, bam, bai, k_file.text.trim()] }
+    ch_sample_list_effective = merge_bams.out.samplefile
+  } else {
+    ch_data = ch_data_raw
+    ch_sample_list_effective = ch_sample_list
+  }
+
+  emit:
+  data = ch_data
+  samplefile = ch_sample_list_effective
+}
+
 workflow vireo {
   if (params.HELP) {
     helpMessage()
@@ -323,19 +349,8 @@ workflow vireo {
   else {
     ch_sample_list = params.SAMPLEFILE != null ? Channel.fromPath(params.SAMPLEFILE) : errorMessage()
     parseSampleFile(ch_sample_list) | get_data | set { ch_data_raw }
-
-    if (params.merge_bams) {
-      prepare_bam_for_merge(ch_data_raw)
-      ch_merge_inputs = prepare_bam_for_merge.out.prepared
-      merge_bams(
-        ch_merge_inputs.map { it[0] }.collect(),
-        ch_merge_inputs.map { it[1] }.collect(),
-        ch_merge_inputs.map { it[2] }.collect()
-      )
-      ch_data = merge_bams.out.merged_data.map { id, barcodes, bam, bai, k_file -> [id, barcodes, bam, bai, k_file.text.trim()] }
-    } else {
-      ch_data = ch_data_raw
-    }
+    resolve_inputs(ch_data_raw, ch_sample_list)
+    ch_data = resolve_inputs.out.data
 
     ch_data_vireo = ch_data.filter { it[4].toInteger() > 1}
     run_cellsnp(ch_data_vireo) | run_vireo
@@ -350,21 +365,9 @@ workflow souporcell {
   else {
     ch_sample_list = params.SAMPLEFILE != null ? Channel.fromPath(params.SAMPLEFILE) : errorMessage()
     parseSampleFile(ch_sample_list) | get_data | set { ch_data_raw }
-
-    if (params.merge_bams) {
-      prepare_bam_for_merge(ch_data_raw)
-      ch_merge_inputs = prepare_bam_for_merge.out.prepared
-      merge_bams(
-        ch_merge_inputs.map { it[0] }.collect(),
-        ch_merge_inputs.map { it[1] }.collect(),
-        ch_merge_inputs.map { it[2] }.collect()
-      )
-      ch_sample_list_effective = merge_bams.out.samplefile
-      ch_data = merge_bams.out.merged_data.map { id, barcodes, bam, bai, k_file -> [id, barcodes, bam, bai, k_file.text.trim()] }
-    } else {
-      ch_data = ch_data_raw
-      ch_sample_list_effective = ch_sample_list
-    }
+    resolve_inputs(ch_data_raw, ch_sample_list)
+    ch_data = resolve_inputs.out.data
+    ch_sample_list_effective = resolve_inputs.out.samplefile
 
     run_souporcell(ch_data)
     ch_soc = run_souporcell.out.output | collect
@@ -381,21 +384,9 @@ workflow all {
   else {
     ch_sample_list = params.SAMPLEFILE != null ? Channel.fromPath(params.SAMPLEFILE) : errorMessage()
     parseSampleFile(ch_sample_list) | get_data | set { ch_data_raw }
-
-    if (params.merge_bams) {
-      prepare_bam_for_merge(ch_data_raw)
-      ch_merge_inputs = prepare_bam_for_merge.out.prepared
-      merge_bams(
-        ch_merge_inputs.map { it[0] }.collect(),
-        ch_merge_inputs.map { it[1] }.collect(),
-        ch_merge_inputs.map { it[2] }.collect()
-      )
-      ch_sample_list_effective = merge_bams.out.samplefile
-      ch_data = merge_bams.out.merged_data.map { id, barcodes, bam, bai, k_file -> [id, barcodes, bam, bai, k_file.text.trim()] }
-    } else {
-      ch_data = ch_data_raw
-      ch_sample_list_effective = ch_sample_list
-    }
+    resolve_inputs(ch_data_raw, ch_sample_list)
+    ch_data = resolve_inputs.out.data
+    ch_sample_list_effective = resolve_inputs.out.samplefile
 
     ch_data_vireo = ch_data.filter { it[4].toInteger() > 1}
     run_cellsnp(ch_data_vireo) | run_vireo
