@@ -45,6 +45,10 @@ def errorMessage() {
     exit 1
 }
 
+def parseSampleFile(sampleFileChannel) {
+  sampleFileChannel | flatMap { it.readLines() } | map { it -> [it.split()[0], it.split()[1], it.split()[2], it.split()[3]] }
+}
+
 process get_data {
   label 'get_data'
   
@@ -91,6 +95,54 @@ process run_cellsnp {
   '''
   !{projectDir}/bin/cellsnp.sh !{name} !{barcodes} !{bam} !{params.snp_vcf}
   '''
+}
+
+process prepare_bam_for_merge {
+  input:
+  tuple val(name), path(barcodes), path(bam), path(index), val(K)
+
+  output:
+  tuple path("${name}.flagged.bam"), path("${name}.prefixed.barcodes.tsv"), val(K), emit: prepared
+
+  shell:
+  '''
+  awk -v prefix="!{name}-" '{ print prefix $0 }' "!{barcodes}" > "!{name}.prefixed.barcodes.tsv"
+
+  samtools view -h "!{bam}" \
+    | awk -v prefix="!{name}-" 'BEGIN { OFS="\t" } /^@/ { print; next } { for(i=12;i<=NF;i++) { if($i ~ /^CB:Z:/) { sub(/^CB:Z:/, "", $i); $i = "CB:Z:" prefix $i; break } } print }' \
+    | samtools view -b -o "!{name}.flagged.bam" -
+  '''
+}
+
+process merge_bams {
+  publishDir "${params.outdir}/merged_inputs", mode: 'copy'
+
+  input:
+  path(flagged_bams)
+  path(prefixed_barcodes)
+  val(k_values)
+
+  output:
+  path('samples_merged.tsv'), emit: samplefile
+
+  script:
+  def uniqueK = k_values.collect { it.toString() }.unique()
+  if (uniqueK.size() != 1) {
+    error "merge_bams=true requires all K values in SAMPLEFILE to be identical."
+  }
+  def merged_k = uniqueK[0]
+  """
+  ls -1 *.flagged.bam | sort > bam_all.list
+  samtools merge -b bam_all.list --threads ${task.cpus} -o merged_all.bam
+  samtools index merged_all.bam -@ ${task.cpus}
+
+  for f in \$(ls -1 *.prefixed.barcodes.tsv | sort); do
+    cat "\$f"
+  done > merged_barcodes_all.tsv
+  gzip -f merged_barcodes_all.tsv
+
+  printf "%s\\t%s\\t%s\\t%s\\n" "all" "\$PWD/merged_all.bam" "\$PWD/merged_barcodes_all.tsv.gz" "${merged_k}" > samples_merged.tsv
+  """
 }
 
 process run_vireo {
@@ -267,7 +319,21 @@ workflow vireo {
   }
   else {
     ch_sample_list = params.SAMPLEFILE != null ? Channel.fromPath(params.SAMPLEFILE) : errorMessage()
-    ch_sample_list | flatMap{ it.readLines() } | map { it -> [ it.split()[0], it.split()[1], it.split()[2], it.split()[3]] } | get_data | set { ch_data }
+    parseSampleFile(ch_sample_list) | get_data | set { ch_data_raw }
+
+    if (params.merge_bams) {
+      prepare_bam_for_merge(ch_data_raw)
+      ch_merge_inputs = prepare_bam_for_merge.out.prepared
+      merge_bams(
+        ch_merge_inputs.map { it[0] }.collect(),
+        ch_merge_inputs.map { it[1] }.collect(),
+        ch_merge_inputs.map { it[2] }.collect()
+      )
+      parseSampleFile(merge_bams.out.samplefile) | get_data | set { ch_data }
+    } else {
+      ch_data = ch_data_raw
+    }
+
     ch_data_vireo = ch_data.filter { it[4].toInteger() > 1}
     run_cellsnp(ch_data_vireo) | run_vireo
   }
@@ -280,10 +346,27 @@ workflow souporcell {
   }
   else {
     ch_sample_list = params.SAMPLEFILE != null ? Channel.fromPath(params.SAMPLEFILE) : errorMessage()
-    ch_sample_list | flatMap{ it.readLines() } | map { it -> [ it.split()[0], it.split()[1], it.split()[2], it.split()[3] ] } | get_data | run_souporcell
+    parseSampleFile(ch_sample_list) | get_data | set { ch_data_raw }
+
+    if (params.merge_bams) {
+      prepare_bam_for_merge(ch_data_raw)
+      ch_merge_inputs = prepare_bam_for_merge.out.prepared
+      merge_bams(
+        ch_merge_inputs.map { it[0] }.collect(),
+        ch_merge_inputs.map { it[1] }.collect(),
+        ch_merge_inputs.map { it[2] }.collect()
+      )
+      ch_sample_list_effective = merge_bams.out.samplefile
+      parseSampleFile(ch_sample_list_effective) | get_data | set { ch_data }
+    } else {
+      ch_data = ch_data_raw
+      ch_sample_list_effective = ch_sample_list
+    }
+
+    run_souporcell(ch_data)
     ch_soc = run_souporcell.out.output | collect
-    run_shared_samples(ch_soc, ch_sample_list)
-    group_shared_samples(run_shared_samples.out.mapping,ch_soc,ch_sample_list)
+    run_shared_samples(ch_soc, ch_sample_list_effective)
+    group_shared_samples(run_shared_samples.out.mapping,ch_soc,ch_sample_list_effective)
   }
 }
 
@@ -294,20 +377,40 @@ workflow all {
   }
   else {
     ch_sample_list = params.SAMPLEFILE != null ? Channel.fromPath(params.SAMPLEFILE) : errorMessage()
-    ch_sample_list | flatMap{ it.readLines() } | map { it -> [ it.split()[0], it.split()[1], it.split()[2] , it.split()[3] ] } | get_data | set { ch_data }
+    parseSampleFile(ch_sample_list) | get_data | set { ch_data_raw }
+
+    if (params.merge_bams) {
+      prepare_bam_for_merge(ch_data_raw)
+      ch_merge_inputs = prepare_bam_for_merge.out.prepared
+      merge_bams(
+        ch_merge_inputs.map { it[0] }.collect(),
+        ch_merge_inputs.map { it[1] }.collect(),
+        ch_merge_inputs.map { it[2] }.collect()
+      )
+      ch_sample_list_effective = merge_bams.out.samplefile
+      parseSampleFile(ch_sample_list_effective) | get_data | set { ch_data }
+    } else {
+      ch_data = ch_data_raw
+      ch_sample_list_effective = ch_sample_list
+    }
+
     ch_data_vireo = ch_data.filter { it[4].toInteger() > 1}
     run_cellsnp(ch_data_vireo) | run_vireo
     run_souporcell(ch_data)
     ch_soc = run_souporcell.out.output | collect
     ch_vir = run_vireo.out.output | collect
-    run_shared_samples(ch_soc, ch_sample_list)
+    run_shared_samples(ch_soc, ch_sample_list_effective)
     // quantify_shared_samples is older version of group_shared_samples and probably should be depricated
     quantify_shared_samples(run_shared_samples.out.mapping)
-    group_shared_samples(run_shared_samples.out.mapping,ch_soc,ch_sample_list)
-    compare_methods(ch_soc, ch_vir, ch_sample_list)
+    group_shared_samples(run_shared_samples.out.mapping,ch_soc,ch_sample_list_effective)
+    compare_methods(ch_soc, ch_vir, ch_sample_list_effective)
     if(params.check_sex){
-      get_gex_data(ch_sample_list)
-      check_sex(ch_soc, ch_vir, get_gex_data.out, ch_sample_list)
+      if (params.merge_bams) {
+        log.warn "merge_bams=true with check_sex=true is not supported; skipping check_sex."
+      } else {
+        get_gex_data(ch_sample_list_effective)
+        check_sex(ch_soc, ch_vir, get_gex_data.out, ch_sample_list_effective)
+      }
     }
   }
 }
