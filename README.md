@@ -8,7 +8,7 @@ There are two branches:
 `nextflow-tower` - this branch contains the script for running demultiplexing on the FARM using Nextflow Tower.
 
 ## Quick start
-First `git clone https://github.com/cellgeni/nf-demultiplex.git` into actions. Then create sample file `actions/samples.tsv`:
+First `git clone https://github.com/cellgeni/nf-demultiplex.git` into actions. Then create sample file `actions/samples.tsv` (name bam barcode number-of-genotype):
 <pre>
 name1	/path/to/1/bam	/path/to/1/barcodes.tsv.gz  K1
 name2	/path/to/2/bam	/path/to/2/barcodes.tsv.gz  K2
@@ -28,6 +28,7 @@ nextflow run actions/nf-demultiplex/main.nf \
 </pre>
 
 NOTEs
+0. Use `--merge_bams` if you want to merge bams and run pipeline on combined one. Make sure all `K` (numbers of donors) in sample file are identical.
 1. Specify `ngenomes`, if you  now how many genotypes (donors) should be present whole dataset (see below).
 2. See `check_sex` below if you need to identify donor sex.
 3. pipeline expects chromosomes names to include "chr" ("chr1" not "1"). You'll need to change `soc_vcf` and `soc_fasta` if your bam file uses no-chr naming, see commented lines in `nextflow.config`.
@@ -53,6 +54,8 @@ NOTEs
 * `--outdir` - The path to where the results will be saved.
 * `--barcodes_on_irods` - Tells pipeline whether to look for the gzipped barcodes file on IRODS or the FARM (default false means look locally).
 * `--bam_on_irods` - Tells pipeline whether to look for the bam file on IRODS or the FARM (default false means look locally).
+* `--merge_bams` - If `true`, pipeline first prefixes each sample barcode with sample id, merges all input BAMs/barcodes into one synthetic sample, then runs the selected entry workflow on that merged sample.
+  In merged mode, output sample id is hardcoded to `all`, and all input `K` values in `SAMPLEFILE` must be identical (pipeline fails otherwise).
 * `--known_genotypes` - Whether to use the `known_genotypes/donorFile` option in souporcell/vireo. If true is used then the `--soc_vcf/--snp_vcf` option needs to be provided with a path to the known genotypes VCF file. The number of genotypes in the known genotypes vcf must match the number of donors supplied in the K parameter (Defualt false means not to use known_genotypes).
 * `--check_sex` - set it to `true` if you want pipeline to identify donor sexes using XIST/RPS4Y1 expressions. It is experimental, it expects `filtered_feature_bc_matrix` to be in the same place as bams and right now it only implemented for `all` workflow (that is both vireo and souporcell) - just because I'm lazy. Pipeline will generate `sex` folder with two csv files (for souporcell and vireo) with summary statistics about XIST/RPS4Y1 expression in predicted donors and assigned sex. It will also generate some figures.
 #### Souporcell:
