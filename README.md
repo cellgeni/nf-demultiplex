@@ -8,7 +8,7 @@ There are two branches:
 `nextflow-tower` - this branch contains the script for running demultiplexing on the FARM using Nextflow Tower.
 
 ## Quick start
-First `git clone https://github.com/cellgeni/nf-demultiplex.git` into actions. Then create sample file `actions/samples.tsv`:
+First `git clone https://github.com/cellgeni/nf-demultiplex.git` into actions. Then create sample file `actions/samples.tsv` (name bam barcode number-of-genotype):
 <pre>
 name1	/path/to/1/bam	/path/to/1/barcodes.tsv.gz  K1
 name2	/path/to/2/bam	/path/to/2/barcodes.tsv.gz  K2
@@ -28,6 +28,7 @@ nextflow run actions/nf-demultiplex/main.nf \
 </pre>
 
 NOTEs
+0. Use `--merge_bams` if you want to merge bams and run pipeline on combined one. Make sure all `K` (numbers of donors) in sample file are identical.
 1. Specify `ngenomes`, if you  now how many genotypes (donors) should be present whole dataset (see below).
 2. See `check_sex` below if you need to identify donor sex.
 3. pipeline expects chromosomes names to include "chr" ("chr1" not "1"). You'll need to change `soc_vcf` and `soc_fasta` if your bam file uses no-chr naming, see commented lines in `nextflow.config`.

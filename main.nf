@@ -130,7 +130,7 @@ process merge_bams {
   def merged_k = uniqueK[0]
   """
   ls -1 *.flagged.bam | sort > bam_all.list
-  samtools merge -b bam_all.list --threads ${task.cpus} -o merged_all.bam
+  samtools merge -b bam_all.list --threads ${task.cpus} merged_all.bam
   samtools index merged_all.bam -@ ${task.cpus}
 
   for f in \$(ls -1 *.prefixed.barcodes.tsv | sort); do
