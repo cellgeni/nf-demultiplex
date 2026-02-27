@@ -111,8 +111,6 @@ process prepare_bam_for_merge {
 }
 
 process merge_bams {
-  publishDir "${params.outdir}/merged_inputs", mode: 'copy'
-
   input:
   path(flagged_bams)
   path(prefixed_barcodes)
